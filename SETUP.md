@@ -15,15 +15,28 @@ sharing would make every Xandland signup an XLResale user and vice versa. This
 also matches what you already do — XLEats, XLSites, and XL Courtside each have
 their own project in this org.
 
+**On the organization:** you have three — `Screenreads`, `Xandland.com`, and
+`Xandland Primary`. Pick **Xandland Primary**. The name is misleading: it's just
+your paid billing container, and XLEats, XLSites, and XL Courtside all live there
+despite none of them being Xandland products. The organization does not join the
+databases together in any way — separate project means separate database,
+separate users, separate everything. Your two projects in `Screenreads` are both
+sitting paused, which is what the free tier does after about a week of
+inactivity; that's the thing to avoid, not the org name.
+
 1. Go to **https://supabase.com/dashboard**.
-2. Click **New project**. Make sure the **organization** dropdown is the same one
-   that holds Xandland Platform, XLEats, XLSites, and XL Courtside.
-3. Fill in:
+2. Click **New project**.
+3. Set the **organization** dropdown to **Xandland Primary**.
+4. Fill in:
    - **Name:** `XLResale`
-   - **Database Password:** click **Generate a password**, then **copy it somewhere
-     safe** — you will not be shown it again.
-   - **Region:** `East US (North Virginia)` — closest to Texas of the US options.
-4. Click **Create new project**. Provisioning takes about two minutes.
+   - **Database Password:** click **Generate a password**, then **copy it
+     somewhere safe** — you will not be shown it again. You won't need it
+     day-to-day; it's for direct database connections and account recovery.
+   - **Region:** `East US (Ohio)` — same region as Xandland Platform, and about
+     as close to Texas as the US options get.
+5. Click **Create new project**. Provisioning takes about two minutes.
+6. **Tell me in chat when it's done.** I'll pull the project reference and the
+   API keys myself — see step 5 below.
 
 ---
 
@@ -74,17 +87,39 @@ should have 8 rows (Tools, Vinyl / Media, Furniture, and so on).
 
 ---
 
-## 5. Copy the Supabase keys
+## 5. The Supabase keys — you don't have to send me anything
+
+I'm already signed in to your Supabase account from the command line, so once
+the project exists I pull the project reference and both API keys myself and
+write them straight into `.env.local`. Nothing sensitive needs to go through
+chat. Just tell me the project is created.
+
+**For Vercel**, you copy the values yourself, straight from the dashboard:
 
 1. In the left sidebar, click **Project Settings** (the gear at the bottom).
-2. Click **API keys**.
-3. You need three values. **Paste them to me in chat** and I'll put them in the
-   right files — don't try to edit anything yourself.
-   - **Project URL** (looks like `https://abcdefgh.supabase.co`)
-   - **anon public** key (a long string starting `eyJ...`)
-   - **service_role** key — click **Reveal** first. This one is a secret that can
-     read and write anything, ignoring all security rules. It only ever lives on
-     the server. Don't paste it anywhere else.
+2. Click **API Keys**.
+3. Open **https://vercel.com/dashboard** → the **xlresale** project →
+   **Settings** → **Environment Variables**, and add these three. The names must
+   match exactly — a typo here shows up as a confusing runtime error later.
+
+   | Vercel variable name | Where to copy it from |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | **Project URL** — looks like `https://abcdefgh.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the **anon / public** key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | the **service_role** key — click **Reveal** first |
+
+4. Leave all three environments (Production, Preview, Development) ticked, and
+   click **Save** for each.
+
+> The **service_role** key ignores every security rule in the database and can
+> read or write anything. It belongs in Vercel and nowhere else — never in a
+> message, a screenshot, or a variable whose name starts with `NEXT_PUBLIC_`
+> (that prefix means "ship this to the browser"). The anon key is safe to expose;
+> that's what row-level security is protecting.
+>
+> If it ever does leak, you can invalidate it: **Project Settings → API Keys →
+> the ⋯ menu next to the key → Roll**. Nothing else needs changing beyond pasting
+> the new value back into Vercel.
 
 ---
 
@@ -145,30 +180,36 @@ instead. Easier to decide now than after real payments start.
 
 ---
 
-## 8. Add the same values in Vercel
+## 8. The full Vercel environment variable list
 
-Once you've sent me the keys and I've confirmed things run locally:
+Step 5 covers the three Supabase ones. Here's everything, so you can work down a
+single list. Add each in **xlresale → Settings → Environment Variables** with all
+three environments (Production, Preview, Development) ticked.
 
-1. Go to **https://vercel.com/dashboard** and open the **xlresale** project.
-2. **Settings** → **Environment Variables**.
-3. For each key, enter the **Name** exactly as written in `.env.example`, paste
-   the **Value**, leave all three environments (Production, Preview, Development)
-   ticked, and click **Save**.
-4. After adding them all, go to the **Deployments** tab, click the **⋯** menu on
-   the most recent deployment, and choose **Redeploy**. Environment variables
-   only apply to builds that run after they're added.
+| Name | Value | Needed by |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API Keys | Phase 1 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | same page, **anon / public** | Phase 1 |
+| `SUPABASE_SERVICE_ROLE_KEY` | same page, **service_role** (Reveal first) | Phase 3 |
+| `NEXT_PUBLIC_GOOGLE_MAPS_KEY` | the new `xlresale-browser` key from step 6 | Phase 2 |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | ask me — it's in `.env.local` already | Phase 3 |
+| `STRIPE_SECRET_KEY` | ask me — same | Phase 3 |
+| `STRIPE_WEBHOOK_SECRET` | doesn't exist yet; comes in Phase 3 | Phase 3 |
+
+After adding them, go to the **Deployments** tab, click the **⋯** menu on the
+most recent deployment, and choose **Redeploy**. Environment variables only apply
+to builds that run *after* they're added — this catches people out constantly.
 
 ---
 
-## What I still need from you
+## What I need from you
 
-Paste these into chat when you have them:
+- [ ] **Create the Supabase project** (step 1) and tell me it's done. I'll pull
+      the reference and keys myself.
+- [ ] Add the three Supabase variables in Vercel (step 5).
+- [ ] Google Maps key (step 6) — paste it in chat. It's a browser key locked to
+      your domains, so it isn't a secret in the way the others are.
+- [x] ~~Stripe keys~~ — reused from XLSites, already in `.env.local`.
 
-- [ ] Supabase Project URL
-- [ ] Supabase anon public key
-- [ ] Supabase service_role key
-- [ ] Google Maps API key (the new `xlresale-browser` one)
-- [x] ~~Stripe keys~~ — reused from XLSites, already in `.env.local`
-
-Only the Supabase keys block Phase 1 (magic-link sign-in). Google Maps isn't
+Only the Supabase project blocks Phase 1 (magic-link sign-in). Google Maps isn't
 needed until Phase 2.
