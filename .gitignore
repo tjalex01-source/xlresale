@@ -47,3 +47,6 @@ SUPABASE-DB-PASSWORD.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase CLI scratch state
+supabase/.temp/
