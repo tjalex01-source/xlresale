@@ -9,12 +9,17 @@ Work top to bottom — later steps depend on earlier ones.
 
 ## 1. Create the Supabase project
 
-A dedicated project, not a shared one (CLAUDE.md §15).
+A dedicated project, not tables inside Xandland Platform. The reason is
+`auth.users`: Supabase Auth is per-project and cannot be split by schema, so
+sharing would make every Xandland signup an XLResale user and vice versa. This
+also matches what you already do — XLEats, XLSites, and XL Courtside each have
+their own project in this org.
 
 1. Go to **https://supabase.com/dashboard**.
-2. Click **New project**.
+2. Click **New project**. Make sure the **organization** dropdown is the same one
+   that holds Xandland Platform, XLEats, XLSites, and XL Courtside.
 3. Fill in:
-   - **Name:** `xlresale`
+   - **Name:** `XLResale`
    - **Database Password:** click **Generate a password**, then **copy it somewhere
      safe** — you will not be shown it again.
    - **Region:** `East US (North Virginia)` — closest to Texas of the US options.
@@ -87,44 +92,56 @@ should have 8 rows (Tools, Vinyl / Media, Furniture, and so on).
 
 Needed from Phase 2 on (address autocomplete), so you can do this now or later.
 
+You already have a Google API key powering Places in XLSites, and billing is
+already attached to whatever Cloud project it lives in. **Reuse that project —
+but make a new key.** XLResale's key has to be locked to your website addresses
+(that's what protects it, since it ships to the browser), and a key locked that
+way stops working for server-side calls. Adding that restriction to the existing
+key would break XLSites.
+
 1. Go to **https://console.cloud.google.com/**.
-2. Top bar, click the project dropdown → **New Project**. Name it `xlresale`.
-   Click **Create**, then make sure it's selected in the dropdown.
-3. Left menu → **Billing** → **Link a billing account**. Maps Platform will not
-   serve requests without billing attached. Google gives a recurring monthly
-   free credit that covers early development.
-4. Search the top bar for **APIs & Services** → **Library**. Enable these four,
-   one at a time (search the name, click it, click **Enable**):
+2. **APIs & Services** → **Credentials**. Find the existing key you use for
+   XLSites Places and note which project the dropdown at the top is showing —
+   that's the project to stay in. **Don't edit that key.**
+3. In the same project, go to **APIs & Services** → **Library**. Enable these
+   four, one at a time (search the name, click it, click **Enable**). Some may
+   already be on:
    - **Maps JavaScript API**
    - **Places API**
    - **Routes API**
    - **Time Zone API**
-5. Go to **APIs & Services** → **Credentials** → **Create credentials** →
+4. Go to **APIs & Services** → **Credentials** → **Create credentials** →
    **API key**. Copy the key.
-6. Click the new key's name to edit it, then:
+5. Click **Edit API key** on the one you just made:
+   - **Name:** `xlresale-browser` — so you can tell it apart later.
    - **Application restrictions** → **Websites**. Click **Add** and enter each of
      these on its own line:
      - `http://localhost:3011/*`
      - `https://xlresale.com/*`
      - `https://*.vercel.app/*`
-   - **API restrictions** → **Restrict key** → tick the four APIs from step 4.
-   - Click **Save**.
-7. Paste the key to me in chat.
+   - **API restrictions** → **Restrict key** → tick the four APIs from step 3.
+   - Click **Save**. Restriction changes can take a few minutes to take effect.
+6. Paste the key to me in chat.
 
 ---
 
-## 7. Stripe test keys
+## 7. Stripe test keys — done
 
-Needed for Phase 3. Stay in **test mode** — the toggle in the top right of the
-Stripe dashboard should say **Test mode**.
+Already handled. I reused the **test-mode** keys from your XLSites Stripe
+account, so XLResale's $5 payments will show up in that same Stripe dashboard.
+Nothing for you to do here.
 
-1. Go to **https://dashboard.stripe.com/test/apikeys**.
-2. Copy the **Publishable key** (starts `pk_test_`).
-3. Click **Reveal test key** on the **Secret key** (starts `sk_test_`) and copy it.
-4. Paste both to me in chat.
+Two notes:
 
-The webhook secret comes later — I'll build the webhook first, then walk you
-through creating the endpoint that generates it.
+- Your live keys exist in that same file. I did **not** copy them. XLResale stays
+  in test mode until you decide to flip it.
+- The webhook secret is per-endpoint, so it can't be reused. Once I've built the
+  webhook in Phase 3, I'll walk you through creating the endpoint that generates
+  it.
+
+If you'd rather XLResale's money be completely separate from XLSites — its own
+books, its own payouts — say so and I'll switch it to its own Stripe account
+instead. Easier to decide now than after real payments start.
 
 ---
 
@@ -150,8 +167,8 @@ Paste these into chat when you have them:
 - [ ] Supabase Project URL
 - [ ] Supabase anon public key
 - [ ] Supabase service_role key
-- [ ] Google Maps API key
-- [ ] Stripe publishable key (`pk_test_`)
-- [ ] Stripe secret key (`sk_test_`)
+- [ ] Google Maps API key (the new `xlresale-browser` one)
+- [x] ~~Stripe keys~~ — reused from XLSites, already in `.env.local`
 
-Then Phase 1 (magic-link sign-in) can start.
+Only the Supabase keys block Phase 1 (magic-link sign-in). Google Maps isn't
+needed until Phase 2.
