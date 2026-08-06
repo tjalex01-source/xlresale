@@ -1,36 +1,18 @@
+import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/server";
 import { SALE_STATUS_META, SALE_STATUS_ORDER } from "@/lib/sale-status";
 
-/**
- * Phase 0 scaffold check. This is not the product — it exists to prove the
- * fonts, the palette, and the Supabase connection are actually wired before
- * Phase 1 starts. The real shell replaces it.
- */
-async function checkDatabase(): Promise<{ ok: boolean; detail: string }> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return { ok: false, detail: "no Supabase keys in .env.local yet" };
-  }
-
-  try {
-    const supabase = await createClient();
-    const { count, error } = await supabase
-      .from("categories")
-      .select("*", { count: "exact", head: true });
-
-    if (error) return { ok: false, detail: error.message };
-    return { ok: true, detail: `${count ?? 0} categories seeded` };
-  } catch (err) {
-    return { ok: false, detail: err instanceof Error ? err.message : "unknown error" };
-  }
-}
-
 export default async function Home() {
-  const db = await checkDatabase();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-16 sm:py-24">
       <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-sale">
-        Phase 0 · scaffold
+        Phase 1 · accounts
       </p>
       <h1 className="mt-2 font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] sm:text-5xl">
         XLResale
@@ -39,6 +21,29 @@ export default async function Home() {
         Garage, yard, and estate sales — see which ones are open right now, and plan a
         route that reaches them before they close.
       </p>
+
+      <div className="mt-7 flex flex-wrap items-center gap-3">
+        {user ? (
+          <>
+            <Link
+              href="/account"
+              className="rounded-xl bg-sale px-4 py-3 font-display text-base font-bold text-white transition-opacity hover:opacity-90"
+            >
+              Your account
+            </Link>
+            <span className="font-mono text-[13px] text-ink-soft">
+              Signed in as {user.email}
+            </span>
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="rounded-xl bg-sale px-4 py-3 font-display text-base font-bold text-white transition-opacity hover:opacity-90"
+          >
+            Sign in
+          </Link>
+        )}
+      </div>
 
       <section className="mt-10 rounded-2xl border border-hair bg-panel p-5 shadow-card">
         <h2 className="font-display text-lg font-bold">Pin states</h2>
@@ -67,21 +72,8 @@ export default async function Home() {
         </ul>
       </section>
 
-      <section className="mt-4 rounded-2xl border border-hair bg-panel p-5 shadow-card">
-        <h2 className="font-display text-lg font-bold">Connection</h2>
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span
-            aria-hidden
-            className="size-2.5 rounded-full"
-            style={{ backgroundColor: db.ok ? "var(--color-live)" : "var(--color-asphalt)" }}
-          />
-          <span className="font-medium">{db.ok ? "Supabase reachable" : "Not connected"}</span>
-          <span className="font-mono text-[13px] text-ink-soft">{db.detail}</span>
-        </p>
-      </section>
-
       <p className="mt-8 font-mono text-[13px] text-asphalt">
-        Next: Phase 1 — magic-link auth and profiles.
+        Next: Phase 2 — hosts create a sale.
       </p>
     </main>
   );
