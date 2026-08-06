@@ -16,17 +16,28 @@ also matches what you already do — XLEats, XLSites, and XL Courtside each have
 their own project in this org.
 
 **On the organization:** you have three — `Screenreads`, `Xandland.com`, and
-`Xandland Primary`. Pick **Xandland Primary**. The name is misleading: it's just
-your paid billing container, and XLEats, XLSites, and XL Courtside all live there
-despite none of them being Xandland products. The organization does not join the
-databases together in any way — separate project means separate database,
-separate users, separate everything. Your two projects in `Screenreads` are both
-sitting paused, which is what the free tier does after about a week of
-inactivity; that's the thing to avoid, not the org name.
+`Xandland Primary`. Use **Xandland.com**, which currently has no projects in it
+and should be on the free plan.
+
+An organization is only a billing and team container. It does not join databases
+together — a separate *project* is what gives XLResale its own database, its own
+users, its own everything, and that's true in any org. So the free one gives the
+same isolation as the $10/month one.
+
+The tradeoff: free projects pause after about a week of inactivity, and a free
+org allows two active projects. That's fine while building — you unpause with one
+click — but it has to move to a paid org before real hosts start listing sales.
+Right now there's no data, so that move is about ten minutes: create the paid
+project, run `schema.sql`, change three variables in Vercel. It gets expensive to
+put off once the app is live, so it's on the pre-launch checklist.
+
+> **Sanity check:** if the "compute size Micro increases your monthly costs by
+> $10" warning appears, you're in the wrong org — back out and switch the
+> dropdown to `Xandland.com`. On the free plan that warning doesn't show.
 
 1. Go to **https://supabase.com/dashboard**.
 2. Click **New project**.
-3. Set the **organization** dropdown to **Xandland Primary**.
+3. Set the **organization** dropdown to **Xandland.com**.
 4. Fill in:
    - **Name:** `XLResale`
    - **Database Password:** click **Generate a password**, then **copy it
@@ -37,6 +48,9 @@ inactivity; that's the thing to avoid, not the org name.
 5. Click **Create new project**. Provisioning takes about two minutes.
 6. **Tell me in chat when it's done.** I'll pull the project reference and the
    API keys myself — see step 5 below.
+
+**Before launch:** move this to a paid org so it stops pausing. Ten minutes now,
+a real migration later.
 
 ---
 
