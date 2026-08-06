@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   XLResale design tokens.
+   Mirrors design-reference.html — fluorescent poster-board signs, price
+   stickers, Saturday-morning hunt. Warm paper, never cold blue.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* surfaces */
+  --color-paper: #faf5ec;
+  --color-panel: #ffffff;
+  --color-hair: #ebe4d8;
+
+  /* text / structure */
+  --color-ink: #211a2e;
+  --color-ink-soft: #6b6478;
+  --color-asphalt: #8a8398;
+
+  /* status + accent — these map 1:1 onto sale_status pins */
+  --color-sale: #ff2e63;
+  --color-sale-tint: #ffe4ec;
+  --color-live: #17b978;
+  --color-live-tint: #dbf6ea;
+  --color-gold: #ffaf1a;
+  --color-gold-tint: #fff0d2;
+
+  /* map styling */
+  --color-map-land: #efe9dc;
+  --color-map-park: #cfe3c0;
+  --color-map-water: #bfd9e8;
+  --color-map-road: #ffffff;
+
+  --shadow-card: 0 6px 20px rgb(33 26 46 / 0.1);
+  --shadow-float: 0 14px 40px rgb(33 26 46 / 0.18);
+
+  /* Display is used with restraint; body is the workhorse; mono carries every
+     number in the app (prices, miles, minutes, hours) — that's a signature
+     choice, not a default. See CLAUDE.md §11. */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.45;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-sale);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Quality floor: motion is decoration, never the only signal. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
