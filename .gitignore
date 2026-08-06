@@ -38,6 +38,9 @@ yarn-error.log*
 # the source drop of the brief + prototype; the files themselves are committed
 XLResale.zip
 
+# Supabase database password — move this into your password manager and delete it
+SUPABASE-DB-PASSWORD.txt
+
 # vercel
 .vercel
 
