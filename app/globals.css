@@ -24,6 +24,16 @@
   --color-gold: #ffaf1a;
   --color-gold-tint: #fff0d2;
 
+  /* Darkened status colors, for TEXT sitting on a tint.
+     The bright versions are calibrated for pins and dots against paper; at
+     small sizes on their own tint they drop to ~2.2:1, which is unreadable.
+     These hold >=4.7:1 while staying the same hue. Use the bright color for
+     dots, borders, and large display type; use these for anything you read. */
+  --color-live-deep: #0b7a4e;
+  --color-sale-deep: #c2003c;
+  --color-gold-deep: #8a5a00;
+  --color-asphalt-deep: #5a5468;
+
   /* map styling */
   --color-map-land: #efe9dc;
   --color-map-park: #cfe3c0;
@@ -52,6 +62,57 @@ body {
   outline: 3px solid var(--color-sale);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   Sticker motion.
+   The hero is a scatter of garage-sale price stickers. They drift, they pop in
+   on load, and the one that's open right now pulses. Every one of these is
+   switched off by the reduced-motion block below — the status is always
+   readable from color and text alone.
+   --------------------------------------------------------------------------- */
+@keyframes sticker-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7) rotate(var(--tilt, 0deg));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-9px) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes halo {
+  0% {
+    box-shadow: 0 0 0 0 rgb(23 185 120 / 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 18px rgb(23 185 120 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(23 185 120 / 0);
+  }
+}
+
+.sticker {
+  transform: rotate(var(--tilt, 0deg));
+  animation:
+    sticker-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both var(--in-delay, 0s),
+    drift 7s ease-in-out infinite var(--float-delay, 0s);
+}
+
+.sticker-live {
+  animation: halo 2.2s ease-out infinite;
 }
 
 /* Quality floor: motion is decoration, never the only signal. */

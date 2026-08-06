@@ -46,12 +46,12 @@ export function DisplayNameForm({ initial }: { initial: string }) {
       </div>
 
       {result?.ok === false && (
-        <p className="mt-2 text-sm text-sale" role="alert">
+        <p className="mt-2 text-sm text-sale-deep" role="alert">
           {result.message}
         </p>
       )}
       {result?.ok === true && (
-        <p className="mt-2 text-sm text-live" role="status">
+        <p className="mt-2 text-sm text-live-deep" role="status">
           Saved.
         </p>
       )}

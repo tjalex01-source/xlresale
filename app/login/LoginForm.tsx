@@ -77,7 +77,7 @@ export function LoginForm({ next }: { next: string }) {
       </div>
 
       {state.kind === "error" && (
-        <p className="rounded-xl bg-sale-tint px-3.5 py-2.5 text-sm text-sale" role="alert">
+        <p className="rounded-xl bg-sale-tint px-3.5 py-2.5 text-sm text-sale-deep" role="alert">
           {state.message}
         </p>
       )}
@@ -85,7 +85,7 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={state.kind === "sending"}
-        className="w-full rounded-xl bg-sale px-4 py-3 font-display text-base font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-xl bg-sale px-4 py-3 font-display text-xl font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         {state.kind === "sending" ? "Sending…" : "Email me a sign-in link"}
       </button>

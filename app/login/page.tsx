@@ -32,7 +32,7 @@ export default async function LoginPage({
       </p>
 
       {error && (
-        <p className="mt-5 rounded-xl bg-sale-tint px-3.5 py-2.5 text-sm text-sale" role="alert">
+        <p className="mt-5 rounded-xl bg-sale-tint px-3.5 py-2.5 text-sm text-sale-deep" role="alert">
           {error} Request a fresh link below.
         </p>
       )}
