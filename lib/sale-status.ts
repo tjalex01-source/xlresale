@@ -2,7 +2,7 @@ import type { SaleStatus } from "@/lib/database.types";
 
 /**
  * The single translation point between the `sale_status` enum and how a sale
- * reads on screen.
+ * reads on screen. Colors come from DESIGN.md.
  *
  * design-reference.html uses its own names — `open` / `soon` — which do NOT
  * match the database. The mapping lives here and nowhere else, so the prototype
@@ -10,20 +10,22 @@ import type { SaleStatus } from "@/lib/database.types";
  *
  *   scheduled    → prototype "open"    (pink)
  *   live         → prototype "live"    (green, pulses)
- *   winding_down → prototype "soon"    (gold)
+ *   winding_down → prototype "soon"    (tangerine)
  *   closed       → prototype "closed"  (grey)
  */
 export interface SaleStatusMeta {
   /** Plain, active label shown to shoppers. */
   label: string;
-  /** Pin, dot, and border color. Calibrated against the paper background. */
+  /** What the status means, in the interface's voice. */
+  detail: string;
+  /** Pin, dot, and fill color. Calibrated against the canvas background. */
   color: string;
   /**
-   * Text color for anything sitting on `tint`. The bright `color` only reaches
-   * ~2.2:1 on its own tint, so never use it for small text — use this instead.
+   * Text color for anything sitting on `tint`. The brand color only reaches
+   * ~2.5:1 on its own tint, so never use it for small text — use this instead.
    */
   textColor: string;
-  /** Soft background for chips and stickers. */
+  /** Soft background for chips and tags. */
   tint: string;
   /** Only the live pin animates — and only if the user allows motion. */
   pulse: boolean;
@@ -32,29 +34,33 @@ export interface SaleStatusMeta {
 export const SALE_STATUS_META: Record<SaleStatus, SaleStatusMeta> = {
   scheduled: {
     label: "Open today",
-    color: "var(--color-sale)",
-    textColor: "var(--color-sale-deep)",
-    tint: "var(--color-sale-tint)",
+    detail: "Listed, not started yet.",
+    color: "var(--color-pink)",
+    textColor: "var(--color-pink-ink)",
+    tint: "var(--color-pink-50)",
     pulse: false,
   },
   live: {
     label: "Open now",
-    color: "var(--color-live)",
-    textColor: "var(--color-live-deep)",
-    tint: "var(--color-live-tint)",
+    detail: "Host is out there. Go.",
+    color: "var(--color-green)",
+    textColor: "var(--color-green-ink)",
+    tint: "var(--color-green-50)",
     pulse: true,
   },
   winding_down: {
     label: "Closing soon",
-    color: "var(--color-gold)",
-    textColor: "var(--color-gold-deep)",
-    tint: "var(--color-gold-tint)",
+    detail: "Last call — make an offer.",
+    color: "var(--color-tangerine)",
+    textColor: "var(--color-tangerine-ink)",
+    tint: "var(--color-tangerine-50)",
     pulse: false,
   },
   closed: {
     label: "Wrapped up",
-    color: "var(--color-asphalt)",
-    textColor: "var(--color-asphalt-deep)",
+    detail: "Done for the day.",
+    color: "var(--color-grey)",
+    textColor: "var(--color-grey-ink)",
     tint: "#EFECF2",
     pulse: false,
   },

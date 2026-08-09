@@ -6,11 +6,18 @@
 >
 > **Companion files in this repo:**
 > - `schema.sql` — the complete database migration (already written, ready to run).
-> - `design-reference.html` — a standalone visual prototype. **Design reference only —
->   do not port it.** Rebuild its look and behavior as real Next.js components.
+> - `DESIGN.md` — **the design system. Read it before building any UI and follow it
+>   exactly.** Covers palette, type, the mascot, and the hero.
+> - `MAPS-COST-CONTROLS.md` — how to use Google Maps without surprise bills. Follow it.
+> - `design-reference.html` — a standalone visual prototype of the product UI. **Design
+>   reference only — do not port it.** Rebuild its look/behavior as Next.js components.
+> - `hero-frame.html` — the built landing hero, composed over the real mascot render.
+>   Rebuild the landing hero to match it (pulling type/color from `DESIGN.md`).
+> - `public/mascot/` — brand mascot art. `hero.png` is the hero illustration; add the
+>   other poses (see `DESIGN.md` → Mascot) as you build the states that use them.
 >
-> *(Both companion files may still say "Haul" in places — that was the working name.
-> The product is **XLResale**. Database table names are generic and unaffected.)*
+> *(The `.html` reference files may still say "Haul" in places — that was the working
+> name. The product is **XLResale**. Database table names are generic and unaffected.)*
 
 ---
 
@@ -189,7 +196,8 @@ Replace the prototype's CSS-faked map with the real thing.
 - **Route legs:** Google **Distance Matrix / Routes API** for real drive times between
   stops, feeding the planner in §10.
 - **Ops:** restrict the API key by HTTP referrer; Maps Platform billing must be enabled.
-  Document the console steps for T.J.
+  Document the console steps for T.J. **Follow `MAPS-COST-CONTROLS.md`** for matrix
+  caching, single-map-instance reuse, and the required billing cap + quotas.
 
 ---
 
@@ -216,34 +224,20 @@ swap its fake distances for real Distance Matrix legs.
 
 ---
 
-## 11. Design system (match the prototype)
+## 11. Design system → see `DESIGN.md`
 
-Fun, sharp, user-friendly — the opposite of the cold-blue scraper competitors. Ground
-it in the world of garage sales: fluorescent poster-board signs, price stickers, the
-Saturday-morning hunt.
+**`DESIGN.md` is the single source of truth for all visual design** — palette, type scale,
+spacing, the mascot, the hero, component specs, and the "defaults to never ship" list.
+Read it before building any UI and derive every color/font/size from it. The landing hero
+is already built as `hero-frame.html`; match it. Do not use any palette values from earlier
+drafts of this brief — `DESIGN.md`'s tokens win.
 
-**Palette:**
-| Token | Hex | Use |
-|---|---|---|
-| paper | `#FAF5EC` | warm background |
-| ink | `#211A2E` | text / structure |
-| sale (primary) | `#FF2E63` | fluorescent sign pink — primary accent |
-| live | `#17B978` | "open now" green (pulsing pin) |
-| gold | `#FFAF1A` | price-sticker marigold — "closing soon" |
-| asphalt | `#8A8398` | muted grey — "wrapped up" / secondary text |
-
-**Type:**
-- Display: **Bricolage Grotesque** (700/800) — chunky, characterful, used with restraint.
-- Body / UI: **Instrument Sans**.
-- **Numbers (prices, miles, minutes, hours): Space Mono.** This is a signature choice —
-  all data reads like receipts/price tags. Keep it.
-
-**Pin status colors:** live = green (pulse) · winding_down = gold · scheduled/open = pink
-· closed = grey.
-
-**Quality floor (non-negotiable):** responsive to mobile, visible keyboard focus,
-`prefers-reduced-motion` respected. Copy is plain, active, sentence case ("Add to route,"
-"Go live now"), named for what the user controls.
+Quick orientation only (full detail in `DESIGN.md`): fun, bold, mascot-led — the opposite
+of the cold-blue scraper competitors. Display face **Bricolage Grotesque**, body
+**Instrument Sans**, all numbers in **Space Mono**. Primary **pink `#FF2E63`**, live
+**green `#12B76A`**, price-sticker **tangerine `#FF9F1C`**, ink `#17131F` on a near-white
+canvas. Pin status colors: live = green (pulse) · winding_down = tangerine · scheduled/open
+= pink · closed = grey.
 
 ---
 

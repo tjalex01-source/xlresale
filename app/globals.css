@@ -1,118 +1,146 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   XLResale design tokens.
-   Mirrors design-reference.html — fluorescent poster-board signs, price
-   stickers, Saturday-morning hunt. Warm paper, never cold blue.
+   XLResale design tokens — see DESIGN.md, which is the source of truth.
+   The earlier cream/marigold palette from CLAUDE.md §11 is superseded; DESIGN.md
+   explicitly names a cream background as a default to never ship.
    --------------------------------------------------------------------------- */
 @theme {
   /* surfaces */
-  --color-paper: #faf5ec;
+  --color-canvas: #fffdf9;
   --color-panel: #ffffff;
-  --color-hair: #ebe4d8;
+  --color-hair: #ebe6dd;
 
-  /* text / structure */
-  --color-ink: #211a2e;
-  --color-ink-soft: #6b6478;
-  --color-asphalt: #8a8398;
+  /* text */
+  --color-ink: #17131f;
+  --color-ink-soft: #3a3448;
+  --color-muted: #6b6478;
+  --color-grey: #8a8398;
 
-  /* status + accent — these map 1:1 onto sale_status pins */
-  --color-sale: #ff2e63;
-  --color-sale-tint: #ffe4ec;
-  --color-live: #17b978;
-  --color-live-tint: #dbf6ea;
-  --color-gold: #ffaf1a;
-  --color-gold-tint: #fff0d2;
+  /* brand */
+  --color-pink: #ff2e63;
+  --color-green: #12b76a;
+  --color-tangerine: #ff9f1c;
+  --color-violet: #7c5cfc;
 
-  /* Darkened status colors, for TEXT sitting on a tint.
-     The bright versions are calibrated for pins and dots against paper; at
-     small sizes on their own tint they drop to ~2.2:1, which is unreadable.
-     These hold >=4.7:1 while staying the same hue. Use the bright color for
-     dots, borders, and large display type; use these for anything you read. */
-  --color-live-deep: #0b7a4e;
-  --color-sale-deep: #c2003c;
-  --color-gold-deep: #8a5a00;
-  --color-asphalt-deep: #5a5468;
+  /* soft tints, for section backgrounds and chips */
+  --color-pink-50: #ffe7ee;
+  --color-green-50: #def7ec;
+  --color-tangerine-50: #fff1da;
+  --color-violet-50: #ece7ff;
 
-  /* map styling */
-  --color-map-land: #efe9dc;
-  --color-map-park: #cfe3c0;
-  --color-map-water: #bfd9e8;
-  --color-map-road: #ffffff;
+  /* Darkened variants for TEXT sitting on the matching tint. The brand colors
+     are tuned for fills, pins, and big display type; at small sizes on their own
+     tint they fall to ~2.5:1. These hold >=4.5:1 at the same hue. */
+  --color-pink-ink: #c2003c;
+  --color-green-ink: #04703f;
+  --color-tangerine-ink: #8a4b00;
+  --color-violet-ink: #4c31b8;
+  --color-grey-ink: #5a5468;
 
-  --shadow-card: 0 6px 20px rgb(33 26 46 / 0.1);
-  --shadow-float: 0 14px 40px rgb(33 26 46 / 0.18);
+  --shadow-card: 0 6px 20px rgb(23 19 31 / 0.1);
+  --shadow-float: 0 14px 40px rgb(23 19 31 / 0.18);
 
-  /* Display is used with restraint; body is the workhorse; mono carries every
-     number in the app (prices, miles, minutes, hours) — that's a signature
-     choice, not a default. See CLAUDE.md §11. */
+  /* Display used boldly; body is the workhorse; mono carries every price, mile,
+     minute, and clock time. DESIGN.md calls that a signature — never set data in
+     the body face. */
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-space-mono), ui-monospace, monospace;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
 }
 
 body {
-  background: var(--color-paper);
+  background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-sale);
-  outline-offset: 2px;
-  border-radius: 6px;
+  outline: 3px solid var(--color-pink);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 /* ---------------------------------------------------------------------------
-   Sticker motion.
-   The hero is a scatter of garage-sale price stickers. They drift, they pop in
-   on load, and the one that's open right now pulses. Every one of these is
-   switched off by the reduced-motion block below — the status is always
-   readable from color and text alone.
+   The one orchestrated moment: the hero going live. A green dot ringing out,
+   the product's whole promise in a single animation. Everything else on the
+   page is a micro-interaction — no scattered fade-in-on-scroll.
    --------------------------------------------------------------------------- */
-@keyframes sticker-in {
-  from {
-    opacity: 0;
-    transform: scale(0.7) rotate(var(--tilt, 0deg));
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
   }
-  to {
-    opacity: 1;
-    transform: scale(1) rotate(var(--tilt, 0deg));
+  75%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
   }
 }
 
-@keyframes drift {
+.ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes bob {
   0%,
   100% {
-    transform: translateY(0) rotate(var(--tilt, 0deg));
+    transform: scaleY(1);
+    opacity: 0.4;
   }
   50% {
-    transform: translateY(-9px) rotate(var(--tilt, 0deg));
+    transform: scaleY(0.5);
+    opacity: 1;
   }
 }
 
-@keyframes halo {
-  0% {
-    box-shadow: 0 0 0 0 rgb(23 185 120 / 0.5);
-  }
-  70% {
-    box-shadow: 0 0 0 18px rgb(23 185 120 / 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgb(23 185 120 / 0);
-  }
+.scroll-bob {
+  animation: bob 1.8s infinite;
 }
 
-.sticker {
-  transform: rotate(var(--tilt, 0deg));
-  animation:
-    sticker-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both var(--in-delay, 0s),
-    drift 7s ease-in-out infinite var(--float-delay, 0s);
+/* Sticker chips: sit slightly askew like something peeled off a jar, then
+   straighten and lift when you point at them. */
+.sticker-chip {
+  transform: rotate(var(--tilt, -2deg));
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
-.sticker-live {
-  animation: halo 2.2s ease-out infinite;
+.sticker-chip:hover,
+.sticker-chip:focus-visible {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+/* Receipt cards get a torn-off bottom edge.
+   Painted as scallops in the surrounding colour rather than cut with mask-image:
+   a single-layer mask tiles only its own strip and masks away the whole rest of
+   the card. That means .receipt only works on an ink background — which is the
+   only place it is used. */
+.receipt {
+  position: relative;
+}
+
+.receipt::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 10px;
+  background: radial-gradient(circle 9px at 9px 100%, var(--color-ink) 0 9px, transparent 9.5px);
+  background-size: 18px 10px;
+  background-repeat: repeat-x;
 }
 
 /* Quality floor: motion is decoration, never the only signal. */
