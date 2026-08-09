@@ -50,3 +50,6 @@ next-env.d.ts
 
 # Supabase CLI scratch state
 supabase/.temp/
+
+# source drops of the brief/design handoff; contents are committed unpacked
+*.zip
