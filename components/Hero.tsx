@@ -132,9 +132,12 @@ export function Hero({ liveCount }: { liveCount: number }) {
         </div>
       </div>
 
-      <div className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-1.5 text-[12px] uppercase tracking-[0.08em] text-muted sm:flex">
+      {/* Left-aligned rather than centred: dead centre puts it over the car,
+          where the scrim has faded out and grey-on-illustration is unreadable.
+          Here it sits in the washed area with the rest of the copy. */}
+      <div className="absolute bottom-6 left-[clamp(20px,5vw,56px)] z-10 hidden flex-col items-start gap-1.5 text-[12px] uppercase tracking-[0.08em] text-ink-soft sm:flex">
         <span>See how it works</span>
-        <span aria-hidden className="scroll-bob h-[22px] w-px bg-muted" />
+        <span aria-hidden className="scroll-bob h-[22px] w-px bg-ink-soft" />
       </div>
     </section>
   );
