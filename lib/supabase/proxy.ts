@@ -6,6 +6,9 @@ import type { Database } from "@/lib/database.types";
 /** Paths that require a signed-in user. */
 const PROTECTED = ["/account", "/host"];
 
+/** Paths that make no sense once you're signed in. */
+const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"];
+
 /**
  * Refreshes the Supabase session on every request and gates protected routes.
  *
@@ -55,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/login") {
+  if (user && SIGNED_OUT_ONLY.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/account";
     url.search = "";

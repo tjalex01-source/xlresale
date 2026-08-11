@@ -207,11 +207,25 @@ create trigger trg_sales_live before update on public.sales
   for each row execute function public.stamp_went_live();
 
 -- 5c. auto-create a profile + default notification prefs when a user signs up
+--     The username arrives in raw_user_meta_data from signUp(). It is UNIQUE, so
+--     a collision raises here and aborts the whole transaction — which also rolls
+--     back the auth.users insert, leaving no orphaned account. The app still
+--     pre-checks availability, so that path is a rare race, not the normal one.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  handle text := nullif(trim(new.raw_user_meta_data->>'username'), '');
 begin
-  insert into public.profiles (id, display_name)
-    values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)))
+  insert into public.profiles (id, username, display_name)
+    values (
+      new.id,
+      handle,
+      coalesce(
+        nullif(trim(new.raw_user_meta_data->>'display_name'), ''),
+        handle,
+        split_part(new.email, '@', 1)
+      )
+    )
     on conflict (id) do nothing;
   insert into public.notification_prefs (profile_id)
     values (new.id)

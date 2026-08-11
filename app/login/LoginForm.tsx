@@ -1,98 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useActionState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
-
-type State = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
+import { Field, FormError, SubmitButton } from "@/components/form";
+import { signIn, type LoginState } from "./actions";
 
 export function LoginForm({ next }: { next: string }) {
-  const [email, setEmail] = useState("");
-  const [state, setState] = useState<State>({ kind: "idle" });
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setState({ kind: "sending" });
-
-    const supabase = createClient();
-    const redirect = new URL("/auth/callback", window.location.origin);
-    redirect.searchParams.set("next", next);
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirect.toString() },
-    });
-
-    if (error) {
-      setState({ kind: "error", message: error.message });
-      return;
-    }
-    setState({ kind: "sent" });
-  }
-
-  if (state.kind === "sent") {
-    return (
-      <div
-        className="rounded-2xl border border-green/30 bg-green-50 p-5"
-        role="status"
-        aria-live="polite"
-      >
-        <h2 className="font-display text-lg font-bold">Check your email</h2>
-        <p className="mt-1.5 text-sm">
-          We sent a sign-in link to <span className="font-mono text-[13px]">{email}</span>. It
-          expires in an hour.
-        </p>
-        <p className="mt-3 text-sm text-ink-soft">
-          Open it on this device — the link is tied to this browser.
-        </p>
-        <button
-          type="button"
-          onClick={() => setState({ kind: "idle" })}
-          className="mt-4 text-sm font-semibold text-ink underline underline-offset-4 hover:text-pink"
-        >
-          Use a different email
-        </button>
-      </div>
-    );
-  }
+  const [state, action] = useActionState<LoginState, FormData>(signIn, { status: "idle" });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="next" value={next} />
+
+      <Field
+        label="Email address"
+        name="email"
+        type="email"
+        required
+        autoComplete="email"
+        autoFocus
+        placeholder="you@example.com"
+      />
+
       <div>
-        <label htmlFor="email" className="block text-sm font-semibold">
-          Email address
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
+        <Field
+          label="Password"
+          name="password"
+          type="password"
           required
-          autoComplete="email"
-          autoFocus
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="mt-1.5 w-full rounded-xl border border-hair bg-panel px-3.5 py-2.5 text-base outline-none placeholder:text-grey focus:border-pink"
+          autoComplete="current-password"
         />
+        <p className="mt-2 text-sm">
+          <Link
+            href="/forgot-password"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-pink"
+          >
+            Forgot your password?
+          </Link>
+        </p>
       </div>
 
-      {state.kind === "error" && (
-        <p className="rounded-xl bg-pink-50 px-3.5 py-2.5 text-sm text-pink-ink" role="alert">
-          {state.message}
-        </p>
-      )}
+      {state.status === "error" && <FormError>{state.message}</FormError>}
 
-      <button
-        type="submit"
-        disabled={state.kind === "sending"}
-        className="w-full rounded-xl bg-pink px-4 py-3 font-display text-xl font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-      >
-        {state.kind === "sending" ? "Sending…" : "Email me a sign-in link"}
-      </button>
-
-      <p className="text-sm text-ink-soft">
-        No password to remember. We email you a link that signs you straight in.
-      </p>
+      <SubmitButton pending="Signing in…">Sign in</SubmitButton>
     </form>
   );
 }

@@ -2,19 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { Wordmark } from "@/components/Wordmark";
-import { FormError } from "@/components/form";
-import { LoginForm } from "./LoginForm";
+import { ResetForm } from "./ResetForm";
 
 export const metadata: Metadata = {
-  title: "Sign in — XLResale",
+  title: "Reset your password — XLResale",
 };
 
-export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const params = await searchParams;
-  const rawNext = typeof params.next === "string" ? params.next : "/account";
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
-  const error = typeof params.error === "string" ? params.error : null;
-
+export default function ForgotPasswordPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
       <Link href="/" className="self-start hover:text-pink">
@@ -22,29 +16,22 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </Link>
 
       <h1 className="mt-8 font-display text-[clamp(2rem,4vw,2.75rem)] font-extrabold leading-none tracking-[-0.02em]">
-        Sign in
+        Reset your password
       </h1>
       <p className="mt-3 text-ink-soft">
-        One account, whether you&rsquo;re hosting a sale or hunting one.
+        We&rsquo;ll email you a link to set a new one.
       </p>
 
-      {error && (
-        <div className="mt-5">
-          <FormError>{error}</FormError>
-        </div>
-      )}
-
       <div className="mt-7">
-        <LoginForm next={next} />
+        <ResetForm />
       </div>
 
       <p className="mt-6 text-sm text-ink-soft">
-        New here?{" "}
         <Link
-          href="/signup"
+          href="/login"
           className="font-semibold text-ink underline underline-offset-4 hover:text-pink"
         >
-          Create an account
+          Back to sign in
         </Link>
       </p>
     </main>
