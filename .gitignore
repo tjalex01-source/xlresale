@@ -53,3 +53,7 @@ supabase/.temp/
 
 # source drops of the brief/design handoff; contents are committed unpacked
 *.zip
+
+# incoming build/design drops; contents are installed into the repo proper
+xlresale-build/
+xlresale-handoff/
