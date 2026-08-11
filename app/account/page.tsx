@@ -34,7 +34,7 @@ export default async function AccountPage() {
     <main className="mx-auto w-full max-w-2xl px-6 py-12">
       <Link
         href="/"
-        className="font-display text-xl font-extrabold tracking-[-0.02em] hover:text-sale"
+        className="font-display text-xl font-extrabold tracking-[-0.02em] hover:text-pink"
       >
         XLResale
       </Link>
@@ -56,10 +56,10 @@ export default async function AccountPage() {
         </p>
         <p className="mt-3 text-sm">
           {profile?.home_address ?? (
-            <span className="text-asphalt">Not set yet — coming with the map.</span>
+            <span className="text-grey-ink">Not set yet — coming with the map.</span>
           )}
         </p>
-        <p className="mt-3 font-mono text-[13px] text-asphalt">
+        <p className="mt-3 font-mono text-[13px] text-grey-ink">
           Search radius: {prefs?.radius_miles ?? 5} miles
         </p>
       </section>
@@ -67,7 +67,7 @@ export default async function AccountPage() {
       <form action={signOut} className="mt-8">
         <button
           type="submit"
-          className="rounded-xl border border-hair bg-panel px-4 py-2.5 text-sm font-semibold hover:border-sale hover:text-sale"
+          className="rounded-xl border border-hair bg-panel px-4 py-2.5 text-sm font-semibold hover:border-pink hover:text-pink"
         >
           Sign out
         </button>

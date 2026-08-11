@@ -33,7 +33,7 @@ export function LoginForm({ next }: { next: string }) {
   if (state.kind === "sent") {
     return (
       <div
-        className="rounded-2xl border border-live/30 bg-live-tint p-5"
+        className="rounded-2xl border border-green/30 bg-green-50 p-5"
         role="status"
         aria-live="polite"
       >
@@ -48,7 +48,7 @@ export function LoginForm({ next }: { next: string }) {
         <button
           type="button"
           onClick={() => setState({ kind: "idle" })}
-          className="mt-4 text-sm font-semibold text-ink underline underline-offset-4 hover:text-sale"
+          className="mt-4 text-sm font-semibold text-ink underline underline-offset-4 hover:text-pink"
         >
           Use a different email
         </button>
@@ -72,12 +72,12 @@ export function LoginForm({ next }: { next: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="mt-1.5 w-full rounded-xl border border-hair bg-panel px-3.5 py-2.5 text-base outline-none placeholder:text-asphalt focus:border-sale"
+          className="mt-1.5 w-full rounded-xl border border-hair bg-panel px-3.5 py-2.5 text-base outline-none placeholder:text-grey focus:border-pink"
         />
       </div>
 
       {state.kind === "error" && (
-        <p className="rounded-xl bg-sale-tint px-3.5 py-2.5 text-sm text-sale-deep" role="alert">
+        <p className="rounded-xl bg-pink-50 px-3.5 py-2.5 text-sm text-pink-ink" role="alert">
           {state.message}
         </p>
       )}
@@ -85,7 +85,7 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={state.kind === "sending"}
-        className="w-full rounded-xl bg-sale px-4 py-3 font-display text-xl font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-xl bg-pink px-4 py-3 font-display text-xl font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         {state.kind === "sending" ? "Sending…" : "Email me a sign-in link"}
       </button>

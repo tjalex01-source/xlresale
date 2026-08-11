@@ -19,7 +19,7 @@ export default async function LoginPage({
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
       <Link
         href="/"
-        className="font-display text-2xl font-extrabold tracking-[-0.02em] hover:text-sale"
+        className="font-display text-2xl font-extrabold tracking-[-0.02em] hover:text-pink"
       >
         XLResale
       </Link>
@@ -32,7 +32,7 @@ export default async function LoginPage({
       </p>
 
       {error && (
-        <p className="mt-5 rounded-xl bg-sale-tint px-3.5 py-2.5 text-sm text-sale-deep" role="alert">
+        <p className="mt-5 rounded-xl bg-pink-50 px-3.5 py-2.5 text-sm text-pink-ink" role="alert">
           {error} Request a fresh link below.
         </p>
       )}

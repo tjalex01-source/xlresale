@@ -11,7 +11,7 @@ function SaveButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
+      className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-60"
     >
       {pending ? "Saving…" : "Save"}
     </button>
@@ -40,18 +40,18 @@ export function DisplayNameForm({ initial }: { initial: string }) {
           required
           maxLength={60}
           defaultValue={initial}
-          className="min-w-0 flex-1 rounded-xl border border-hair bg-panel px-3.5 py-2.5 text-base outline-none placeholder:text-asphalt focus:border-sale"
+          className="min-w-0 flex-1 rounded-xl border border-hair bg-panel px-3.5 py-2.5 text-base outline-none placeholder:text-grey focus:border-pink"
         />
         <SaveButton />
       </div>
 
       {result?.ok === false && (
-        <p className="mt-2 text-sm text-sale-deep" role="alert">
+        <p className="mt-2 text-sm text-pink-ink" role="alert">
           {result.message}
         </p>
       )}
       {result?.ok === true && (
-        <p className="mt-2 text-sm text-live-deep" role="status">
+        <p className="mt-2 text-sm text-green-ink" role="status">
           Saved.
         </p>
       )}

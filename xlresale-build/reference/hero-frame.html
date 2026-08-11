@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLResale — hero frame reference</title>
+<!--
+  ============================================================================
+  HERO FRAME — reference for Claude Code.
+  The background is the Midjourney render at ./hero.png. In the real Next.js
+  build, swap it for <Image src="/mascot/hero.png" priority ... /> — do NOT
+  inline the image. Everything else here (type scale, colors, live pill, CTAs,
+  scrim) should be rebuilt as React/Tailwind following DESIGN.md.
+  ============================================================================
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@700&display=swap');
+
+:root{
+  --canvas:#FFFDF9;
+  --ink:#17131F;
+  --pink:#FF2E63;
+  --green:#12B76A;
+  --tangerine:#FF9F1C;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Instrument Sans',system-ui,sans-serif;color:var(--ink);background:var(--canvas)}
+.mono{font-family:'Space Mono',monospace}
+:focus-visible{outline:3px solid var(--pink);outline-offset:3px;border-radius:8px}
+
+/* ---------- top bar ---------- */
+.nav{position:absolute;top:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px clamp(20px,5vw,56px)}
+.wordmark{display:flex;align-items:center;gap:9px;font-family:'Bricolage Grotesque';font-weight:800;
+  font-size:24px;letter-spacing:-.02em;color:var(--ink)}
+.wordmark svg{width:20px;height:26px;display:block}
+.nav .signin{font-weight:600;font-size:15px;color:var(--ink);text-decoration:none;
+  background:rgba(255,253,249,.7);backdrop-filter:blur(6px);padding:9px 18px;border-radius:999px;
+  border:1px solid rgba(23,19,31,.08);transition:.15s}
+.nav .signin:hover{background:#fff}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:100svh;overflow:hidden;
+  background-image:url('hero.png');background-size:cover;background-position:center 60%}
+/* scrim: warm-white wash on the left so dark type always reads, mascot stays visible right */
+.hero::before{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(100deg,
+    rgba(255,253,249,.94) 0%,
+    rgba(255,253,249,.82) 28%,
+    rgba(255,253,249,.35) 52%,
+    rgba(255,253,249,0) 72%)}
+/* gentle top fade so the nav + headline sit clean over sky */
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,253,249,.5) 0%,rgba(255,253,249,0) 22%)}
+
+.hero-inner{position:relative;z-index:10;min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 clamp(20px,5vw,56px);max-width:1240px;margin:0 auto}
+.hero-copy{max-width:620px}
+
+/* live pill */
+.livepill{display:inline-flex;align-items:center;gap:9px;
+  background:#fff;border:1px solid rgba(23,19,31,.08);box-shadow:0 4px 14px rgba(23,19,31,.08);
+  padding:8px 16px 8px 13px;border-radius:999px;margin-bottom:22px}
+.livepill .dot{width:10px;height:10px;border-radius:50%;background:var(--green);position:relative}
+.livepill .dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--green);
+  animation:ping 1.6s cubic-bezier(0,0,.2,1) infinite}
+@keyframes ping{0%{transform:scale(1);opacity:.6}75%,100%{transform:scale(2.6);opacity:0}}
+.livepill span{font-size:14px;font-weight:600}
+.livepill b{font-family:'Space Mono';font-weight:700}
+
+/* headline */
+.hero h1{font-family:'Bricolage Grotesque';font-weight:800;
+  font-size:clamp(2.6rem,6.4vw,5.4rem);line-height:.98;letter-spacing:-.03em;
+  margin-bottom:18px}
+.hero h1 .hl{color:var(--pink)}
+.hero .sub{font-size:clamp(1.05rem,1.6vw,1.3rem);line-height:1.5;color:#3a3448;max-width:520px;
+  margin-bottom:30px}
+
+/* CTAs */
+.cta-row{display:flex;gap:13px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:17px;
+  padding:15px 26px;border-radius:15px;text-decoration:none;transition:.16s;cursor:pointer;border:none}
+.btn-primary{background:var(--pink);color:#fff;box-shadow:0 6px 18px rgba(255,46,99,.32)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(255,46,99,.4)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{background:var(--ink);color:#fff}
+.btn-secondary:hover{transform:translateY(-2px)}
+.btn-secondary .price{font-family:'Space Mono';font-weight:700;opacity:.9}
+
+/* footer hint (not part of hero; shows the scroll continues) */
+.scrollhint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:10;
+  font-size:12px;color:#6b6478;letter-spacing:.08em;text-transform:uppercase;
+  display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.8}
+.scrollhint .arrow{width:1px;height:22px;background:#6b6478;animation:bob 1.8s infinite}
+@keyframes bob{0%,100%{transform:scaleY(1);opacity:.4}50%{transform:scaleY(.5);opacity:1}}
+
+@media (max-width:640px){
+  .hero{background-position:center 68%}
+  .hero::before{background:linear-gradient(180deg,
+    rgba(255,253,249,.92) 0%,rgba(255,253,249,.7) 40%,rgba(255,253,249,.25) 70%,rgba(255,253,249,0) 100%)}
+  .hero-inner{justify-content:flex-start;padding-top:88px}
+  .scrollhint{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <nav class="nav">
+    <div class="wordmark">
+      <svg viewBox="0 0 20 26"><path d="M10 0C4.5 0 0 4.3 0 9.6 0 16.8 10 26 10 26s10-9.2 10-16.4C20 4.3 15.5 0 10 0z" fill="#FF2E63"/><circle cx="10" cy="9.5" r="4" fill="#fff"/></svg>
+      XLResale
+    </div>
+    <a href="#" class="signin">Sign in</a>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <div class="livepill">
+        <span class="dot"></span>
+        <span><b>14</b> sales open right now</span>
+      </div>
+      <h1>Somebody's garage<br>is <span class="hl">open right now.</span></h1>
+      <p class="sub">Every other app dumps unverified pins on a map. We show you which sales are actually open — and build a route that reaches them before they close.</p>
+      <div class="cta-row">
+        <a href="#" class="btn btn-primary">Find sales near me</a>
+        <a href="#" class="btn btn-secondary">List a sale · <span class="price">$5</span></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="scrollhint"><span>See how it works</span><span class="arrow"></span></div>
+</div>
+
+</body>
+</html>
