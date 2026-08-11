@@ -57,3 +57,8 @@ supabase/.temp/
 # incoming build/design drops; contents are installed into the repo proper
 xlresale-build/
 xlresale-handoff/
+
+# credential drops — read, moved into .env.local, then deleted
+r2.txt
+*-credentials.txt
+*-secret*.txt
