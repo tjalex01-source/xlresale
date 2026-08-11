@@ -62,3 +62,6 @@ xlresale-handoff/
 r2.txt
 *-credentials.txt
 *-secret*.txt
+
+# raw mascot renders before background removal; installed copies live in public/mascot
+nub/
