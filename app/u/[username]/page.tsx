@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
+import { EmptyState } from "@/components/EmptyState";
 
 export const revalidate = 60;
 
@@ -106,9 +107,9 @@ export default async function ProfilePage({ params }: PageProps<"/u/[username]">
               })}
             </ul>
           ) : (
-            <p className="mt-4 text-ink-soft">
-              @{profile.username} hasn&rsquo;t logged a find yet.
-            </p>
+            <EmptyState title="No finds yet">
+              When @{profile.username} logs a bargain, it shows up here.
+            </EmptyState>
           )}
         </section>
       </main>

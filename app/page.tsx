@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 import { Hero } from "@/components/Hero";
+import { Nub } from "@/components/Nub";
+import { NubReveal } from "@/components/NubReveal";
 import { TagPin } from "@/components/TagPin";
 import { Wordmark } from "@/components/Wordmark";
 import { SALE_STATUS_META, SALE_STATUS_ORDER } from "@/lib/sale-status";
@@ -92,6 +94,15 @@ export default async function Home() {
               open up, and your map turns green the same second. No more driving across town to a
               folded table and an empty driveway.
             </p>
+
+            {/* He points at the green pin — the live state this section is about. */}
+            <Nub
+              pose="point"
+              motion="float"
+              width={150}
+              className="mt-8 w-[108px] lg:w-[150px]"
+              decorative
+            />
           </div>
 
           <ul className="space-y-3">
@@ -181,12 +192,21 @@ export default async function Home() {
         {/* ---------------------------------------------------------------- */}
         <section className="bg-violet-50">
           <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-24">
-            <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-violet-ink">
-              10:20 am &middot; you know what you came for
-            </p>
-            <h2 className="mt-4 max-w-2xl font-display text-[clamp(2rem,4vw,3.25rem)] font-bold leading-none tracking-[-0.02em]">
-              Filter for the good stuff.
-            </h2>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-violet-ink">
+                  10:20 am &middot; you know what you came for
+                </p>
+                <h2 className="mt-4 max-w-2xl font-display text-[clamp(2rem,4vw,3.25rem)] font-bold leading-none tracking-[-0.02em]">
+                  Filter for the good stuff.
+                </h2>
+              </div>
+              {/* The page's one attention-grabbing beat: he hops for the box the
+                  first time you scroll past. DESIGN.md says spend the budget here. */}
+              <NubReveal className="inline-block">
+                <Nub pose="grab" width={130} className="w-[92px] sm:w-[130px]" decorative />
+              </NubReveal>
+            </div>
             <ul className="mt-8 flex flex-wrap gap-3">
               {CATEGORIES.map((c) => (
                 <li
@@ -215,12 +235,21 @@ export default async function Home() {
             <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.14em]">
               Hosting one?
             </p>
-            <div className="mt-4 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            {/* items-center, not items-end: Nub makes the right column taller,
+                and bottom-aligning left a dead gap under the eyebrow. */}
+            <div className="mt-4 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
               <h2 className="font-display text-[clamp(2rem,4.4vw,3.25rem)] font-bold leading-none tracking-[-0.02em]">
                 Five dollars puts your driveway
                 <br className="hidden sm:block" /> on every map in town.
               </h2>
               <div>
+                <Nub
+                  pose="lean"
+                  motion="float"
+                  width={140}
+                  className="mb-4 w-[104px] lg:w-[140px]"
+                  decorative
+                />
                 <p className="text-lg leading-relaxed">
                   Post your hours, tag what you&rsquo;re selling, add photos. Tap{" "}
                   <strong className="font-semibold">Go live</strong> Saturday morning and watch the

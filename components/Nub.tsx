@@ -67,7 +67,7 @@ export function Nub({
 }: {
   pose: NubPose;
   motion?: NubMotion;
-  /** Rendered width in px; height follows the art's own ratio. */
+  /** Default rendered width in px. Override responsively with a `w-` class. */
   width: number;
   priority?: boolean;
   className?: string;
@@ -85,8 +85,9 @@ export function Nub({
       width={width}
       height={height}
       priority={priority}
-      className={`${MOTION[motion]} ${className}`}
-      style={{ width, height: "auto" }}
+      // No inline width: an inline style beats every class, which would make
+      // responsive `w-` overrides silently do nothing.
+      className={`h-auto ${MOTION[motion]} ${className}`}
     />
   );
 }
