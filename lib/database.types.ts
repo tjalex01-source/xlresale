@@ -112,6 +112,8 @@ export type Database = {
       }
       notification_prefs: {
         Row: {
+          bulk_lot_categories: number[]
+          bulk_lots_enabled: boolean
           created_at: string
           email_enabled: boolean
           profile_id: string
@@ -124,6 +126,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bulk_lot_categories?: number[]
+          bulk_lots_enabled?: boolean
           created_at?: string
           email_enabled?: boolean
           profile_id: string
@@ -136,6 +140,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bulk_lot_categories?: number[]
+          bulk_lots_enabled?: boolean
           created_at?: string
           email_enabled?: boolean
           profile_id?: string
@@ -660,6 +666,7 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_lot_audience: { Args: { sale_id: string }; Returns: number }
       close_expired_sales: { Args: never; Returns: undefined }
       item_effective_price: {
         Args: {
@@ -685,6 +692,37 @@ export type Database = {
           closes_at: string
           description: string
           distance_miles: number
+          host_id: string
+          id: string
+          lat: number
+          lng: number
+          opens_at: string
+          sale_date: string
+          status: Database["public"]["Enums"]["sale_status"]
+          time_zone: string
+          title: string
+        }[]
+      }
+      sales_near_me: {
+        Args: { in_miles?: number; in_days?: number }
+        Returns: Database["public"]["Functions"]["sales_near_upcoming"]["Returns"]
+      }
+      sales_near_upcoming: {
+        Args: {
+          in_lat: number
+          in_lng: number
+          in_miles?: number
+          in_days?: number
+        }
+        Returns: {
+          address: string
+          categories: string[]
+          closes_at: string
+          description: string
+          discount_active: boolean
+          discount_percent: number
+          distance_miles: number
+          free_pile: boolean
           host_id: string
           id: string
           lat: number
@@ -841,3 +879,8 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type PublicProfile = Database["public"]["Views"]["public_profiles"]["Row"];
 export type Wishlist = Database["public"]["Tables"]["wishlists"]["Row"];
 export type Find = Database["public"]["Tables"]["finds"]["Row"];
+export type NotificationPrefs = Database["public"]["Tables"]["notification_prefs"]["Row"];
+
+/** A row from `sales_near_upcoming` — the week-at-a-time browse/map query. */
+export type UpcomingSale =
+  Database["public"]["Functions"]["sales_near_upcoming"]["Returns"][number];

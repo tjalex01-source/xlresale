@@ -67,6 +67,32 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           </p>
         )}
 
+        <Card title="Shopping">
+          <p className="mt-1 text-sm text-ink-soft">
+            Sales you&rsquo;ve saved, what&rsquo;s near you this week, your alerts, and your finds.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/shop"
+              className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
+            >
+              Go shopping
+            </Link>
+            <Link
+              href="/shop/alerts"
+              className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+            >
+              What you&rsquo;re looking for
+            </Link>
+            <Link
+              href="/shop/finds"
+              className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+            >
+              Your finds
+            </Link>
+          </div>
+        </Card>
+
         <Card title="Public profile">
           <HandleForm initial={profile?.username ?? null} />
         </Card>

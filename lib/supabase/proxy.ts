@@ -3,8 +3,14 @@ import { createServerClient } from "@supabase/ssr";
 
 import type { Database } from "@/lib/database.types";
 
-/** Paths that require a signed-in user. */
-const PROTECTED = ["/account", "/host"];
+/**
+ * Paths that require a signed-in user.
+ *
+ * `/s/[id]` is deliberately absent: a sale page is the thing people share, and
+ * putting a login wall in front of it would kill the growth loop. It handles
+ * signed-out visitors itself by offering "Sign in to save".
+ */
+const PROTECTED = ["/account", "/host", "/shop"];
 
 /** Paths that make no sense once you're signed in. */
 const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"];
