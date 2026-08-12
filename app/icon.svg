@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Favicon: XL over a green map pin, white ground.
+       Letters are ink rather than white: at 16px a tab icon lives or dies on
+       contrast, and ink on the green reads about 6.8:1 where white would be
+       2.4:1 and turn to mush. -->
+  <rect width="64" height="64" rx="14" fill="#FFFFFF" />
+
+  <!-- Pin runs nearly edge to edge. A smaller, politer pin left the head too
+       cramped to hold two legible letters at 16px. -->
+  <path
+    d="M32 1C18.2 1 7 12.2 7 26c0 14 17 29 23.6 36.3a1.9 1.9 0 0 0 2.8 0C40 55 57 40 57 26 57 12.2 45.8 1 32 1Z"
+    fill="#12B76A"
+  />
+
+  <!-- XL, drawn as strokes so it renders identically everywhere,
+       no font dependency. Heavy weight and a wide gap between the letters
+       are both deliberate: at a 16px tab size a 64px stroke shrinks 4x, so
+       anything lighter than this closes up into one dark blob. -->
+  <g
+    stroke="#17131F"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  >
+    <path d="M15 16 L30 38" />
+    <path d="M30 16 L15 38" />
+    <path d="M37 16 L37 38 L50 38" />
+  </g>
+</svg>
