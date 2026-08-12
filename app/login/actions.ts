@@ -72,7 +72,11 @@ export async function updatePassword(
   formData: FormData,
 ): Promise<PasswordState> {
   const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
   if (password.length < 8) return { status: "error", message: "Use at least 8 characters." };
+  if (password !== confirmPassword) {
+    return { status: "error", message: "Those passwords don't match." };
+  }
 
   const supabase = await createClient();
   const {

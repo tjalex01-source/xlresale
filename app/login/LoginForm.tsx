@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
-import { Field, FormError, SubmitButton } from "@/components/form";
+import { Field, FormError, PasswordField, SubmitButton } from "@/components/form";
 import { signIn, type LoginState } from "./actions";
 
 export function LoginForm({ next }: { next: string }) {
@@ -24,13 +24,7 @@ export function LoginForm({ next }: { next: string }) {
       />
 
       <div>
-        <Field
-          label="Password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-        />
+        <PasswordField label="Password" name="password" required autoComplete="current-password" />
         <p className="mt-2 text-sm">
           <Link
             href="/forgot-password"

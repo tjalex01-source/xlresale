@@ -8,12 +8,17 @@ import { validateUsername, usernameErrorMessage } from "@/lib/username";
 export type SignUpState =
   | { status: "idle" }
   | { status: "sent"; email: string }
-  | { status: "error"; message: string; field?: "username" | "email" | "password" };
+  | {
+      status: "error";
+      message: string;
+      field?: "username" | "email" | "password" | "confirm_password";
+    };
 
 export async function signUp(_prev: SignUpState, formData: FormData): Promise<SignUpState> {
   const username = String(formData.get("username") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
 
   const usernameError = validateUsername(username);
   if (usernameError) {
@@ -27,6 +32,15 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
       status: "error",
       message: "Use at least 8 characters.",
       field: "password",
+    };
+  }
+  // Re-checked here as well as in the form: the browser check is a convenience,
+  // and a Server Action is its own entry point that can be called directly.
+  if (password !== confirmPassword) {
+    return {
+      status: "error",
+      message: "Those passwords don't match.",
+      field: "confirm_password",
     };
   }
 
