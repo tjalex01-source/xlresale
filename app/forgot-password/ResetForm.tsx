@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { CheckYourEmail, Field, FormError, SubmitButton } from "@/components/form";
+import { Turnstile } from "@/components/Turnstile";
 import { requestPasswordReset, type ResetState } from "../login/actions";
 
 export function ResetForm() {
@@ -29,6 +30,8 @@ export function ResetForm() {
         autoFocus
         placeholder="you@example.com"
       />
+
+      <Turnstile resetSignal={state} />
 
       {state.status === "error" && <FormError>{state.message}</FormError>}
 

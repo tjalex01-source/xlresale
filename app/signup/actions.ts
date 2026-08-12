@@ -19,6 +19,7 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirm_password") ?? "");
+  const captchaToken = String(formData.get("captcha_token") ?? "");
 
   const usernameError = validateUsername(username);
   if (usernameError) {
@@ -76,12 +77,16 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
       // Read by handle_new_user() to fill the profile row.
       data: { username, display_name: username },
       emailRedirectTo: `${origin}/auth/callback?next=/account`,
+      captchaToken,
     },
   });
 
   if (error) {
     // Supabase reports a duplicate handle as a generic database error, because
     // the failure happens inside the trigger.
+    if (/captcha/i.test(error.message)) {
+      return { status: "error", message: "That verification expired. Try again." };
+    }
     if (/Database error/i.test(error.message)) {
       return { status: "error", message: "That handle was just taken. Try another.", field: "username" };
     }

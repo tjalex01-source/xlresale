@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import { Field, FormError, PasswordField, SubmitButton } from "@/components/form";
+import { Turnstile } from "@/components/Turnstile";
 import { signIn, type LoginState } from "./actions";
 
 export function LoginForm({ next }: { next: string }) {
@@ -34,6 +35,8 @@ export function LoginForm({ next }: { next: string }) {
           </Link>
         </p>
       </div>
+
+      <Turnstile resetSignal={state} />
 
       {state.status === "error" && <FormError>{state.message}</FormError>}
 

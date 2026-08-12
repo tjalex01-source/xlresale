@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { CheckYourEmail, Field, FormError, PasswordField, SubmitButton } from "@/components/form";
+import { Turnstile } from "@/components/Turnstile";
 import { USERNAME_HINT } from "@/lib/username";
 import { signUp, type SignUpState } from "./actions";
 
@@ -79,6 +80,8 @@ export function SignUpForm() {
           </p>
         )}
       </div>
+
+      <Turnstile resetSignal={state} />
 
       {state.status === "error" && <FormError>{state.message}</FormError>}
 

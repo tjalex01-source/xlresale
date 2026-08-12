@@ -10,6 +10,7 @@ export type LoginState = { status: "idle" } | { status: "error"; message: string
 export async function signIn(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const captchaToken = String(formData.get("captcha_token") ?? "");
   const rawNext = String(formData.get("next") ?? "/account");
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
 
@@ -18,12 +19,19 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+    options: { captchaToken },
+  });
 
   if (error) {
     // Supabase says "Email not confirmed" for an unverified account; everything
     // else collapses to invalid credentials on purpose, so this can't be used to
     // discover which addresses have accounts.
+    if (/captcha/i.test(error.message)) {
+      return { status: "error", message: "That verification expired. Try again." };
+    }
     if (/not confirmed/i.test(error.message)) {
       return {
         status: "error",
@@ -46,6 +54,7 @@ export async function requestPasswordReset(
   formData: FormData,
 ): Promise<ResetState> {
   const email = String(formData.get("email") ?? "").trim();
+  const captchaToken = String(formData.get("captcha_token") ?? "");
   if (!email) return { status: "error", message: "Enter your email address." };
 
   const origin = (await headers()).get("origin") ?? "https://xlresale.com";
@@ -53,6 +62,7 @@ export async function requestPasswordReset(
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/account/password`,
+    captchaToken,
   });
 
   // Deliberately reports success either way — a different response for unknown
