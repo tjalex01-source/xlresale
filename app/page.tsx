@@ -278,7 +278,7 @@ export default async function Home() {
                     />
                   </svg>
                   <Link
-                    href="/login?next=/host"
+                    href="/login?next=/host/new"
                     className="inline-flex items-center rounded-[15px] bg-ink px-[26px] py-[15px] text-[17px] font-bold text-canvas transition-transform hover:-translate-y-0.5 active:translate-y-0"
                   >
                     List your sale

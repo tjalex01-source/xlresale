@@ -97,17 +97,26 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
               <span className="font-mono text-ink">
                 {saleCount} {saleCount === 1 ? "sale" : "sales"}
               </span>
-              .
+              . Open the dashboard to go live, drop prices, or mark things sold.
             </p>
           ) : (
             <p className="mt-2 text-sm text-ink-soft">You haven&rsquo;t listed a sale yet.</p>
           )}
-          <Link
-            href="/host/new"
-            className="mt-4 inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
-          >
-            List a sale
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/host/new"
+              className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
+            >
+              List a sale
+            </Link>
+            {/* The seller dashboard had no route into it from anywhere. */}
+            <Link
+              href="/host"
+              className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+            >
+              Seller dashboard
+            </Link>
+          </div>
         </Card>
 
         <Card title="Password">

@@ -33,7 +33,7 @@ export default function NotFound() {
             Back to the map
           </Link>
           <Link
-            href="/login?next=/host"
+            href="/login?next=/host/new"
             className="inline-flex items-center rounded-[15px] border-2 border-ink px-[24px] py-[13px] text-[19px] font-bold hover:bg-ink hover:text-canvas"
           >
             List a sale

@@ -94,7 +94,7 @@ export function Hero({ liveCount }: { liveCount: number }) {
             </p>
           ) : (
             <Link
-              href="/login?next=/host"
+              href="/login?next=/host/new"
               className="mb-6 inline-flex min-h-11 items-center gap-2.5 rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold shadow-card transition-transform hover:-translate-y-0.5"
             >
               <span aria-hidden className="size-2.5 rounded-full bg-pink" />
@@ -123,7 +123,7 @@ export function Hero({ liveCount }: { liveCount: number }) {
               Find sales near me
             </Link>
             <Link
-              href="/login?next=/host"
+              href="/login?next=/host/new"
               className="inline-flex items-center gap-2 rounded-[15px] bg-ink px-[26px] py-[15px] text-[19px] font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0"
             >
               List a sale &middot; <span className="font-mono opacity-90">$5</span>

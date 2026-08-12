@@ -76,7 +76,12 @@ export async function updateSession(request: NextRequest) {
 
   if (user && SIGNED_OUT_ONLY.includes(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/account";
+    // Honour where they were trying to go. Without this, a link like
+    // /login?next=/host/new — which is what the landing page CTAs are — silently
+    // dumps an already-signed-in visitor on their account page instead of the
+    // thing they clicked.
+    const next = searchParams.get("next");
+    url.pathname = next?.startsWith("/") && !next.startsWith("//") ? next : "/account";
     url.search = "";
     return NextResponse.redirect(url);
   }
