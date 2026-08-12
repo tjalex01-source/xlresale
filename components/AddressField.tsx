@@ -27,14 +27,24 @@ export function AddressField({
   onChange: (v: PickedAddress | null) => void;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error">("loading");
+
+  // Whether the key exists is known at render time — it's inlined at build — so
+  // it seeds the initial state rather than being set from inside the effect.
+  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+  const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error">(
+    key ? "loading" : "no-key",
+  );
+
+  // Held in a ref so the effect doesn't depend on the callback's identity. A
+  // parent re-render passing a fresh handler would otherwise tear down and
+  // rebuild Google's widget, losing whatever the host had typed.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-    if (!key) {
-      setStatus("no-key");
-      return;
-    }
+    if (!key) return;
 
     let cancelled = false;
     let element: HTMLElement | null = null;
@@ -59,7 +69,7 @@ export function AddressField({
 
           const loc = place.location;
           if (!loc || !place.formattedAddress) return;
-          onChange({
+          onChangeRef.current({
             address: place.formattedAddress,
             lat: typeof loc.lat === "function" ? loc.lat() : (loc.lat as unknown as number),
             lng: typeof loc.lng === "function" ? loc.lng() : (loc.lng as unknown as number),
@@ -76,7 +86,7 @@ export function AddressField({
       cancelled = true;
       element?.remove();
     };
-  }, [onChange]);
+  }, [key]);
 
   return (
     <div>
