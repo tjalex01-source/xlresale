@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Field, FormError, PasswordField, SubmitButton } from "@/components/form";
 import { Turnstile } from "@/components/Turnstile";
@@ -9,6 +9,8 @@ import { signIn, type LoginState } from "./actions";
 
 export function LoginForm({ next }: { next: string }) {
   const [state, action] = useActionState<LoginState, FormData>(signIn, { status: "idle" });
+  // Controlled so a wrong password does not also wipe the email address.
+  const [email, setEmail] = useState("");
 
   return (
     <form action={action} className="space-y-4">
@@ -22,6 +24,8 @@ export function LoginForm({ next }: { next: string }) {
         autoComplete="email"
         autoFocus
         placeholder="you@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
       />
 
       <div>

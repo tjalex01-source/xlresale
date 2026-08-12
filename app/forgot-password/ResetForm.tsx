@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { CheckYourEmail, Field, FormError, SubmitButton } from "@/components/form";
 import { Turnstile } from "@/components/Turnstile";
@@ -10,6 +10,7 @@ export function ResetForm() {
   const [state, action] = useActionState<ResetState, FormData>(requestPasswordReset, {
     status: "idle",
   });
+  const [email, setEmail] = useState("");
 
   if (state.status === "sent") {
     return (
@@ -29,6 +30,8 @@ export function ResetForm() {
         autoComplete="email"
         autoFocus
         placeholder="you@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
       />
 
       <Turnstile resetSignal={state} />

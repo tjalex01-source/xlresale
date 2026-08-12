@@ -9,6 +9,11 @@ import { signUp, type SignUpState } from "./actions";
 
 export function SignUpForm() {
   const [state, action] = useActionState<SignUpState, FormData>(signUp, { status: "idle" });
+  // Controlled on purpose: React resets a form after an action runs, so an
+  // uncontrolled field would be wiped every time the server rejects a submit —
+  // making the user retype their handle to read "that handle is taken".
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
 
@@ -39,6 +44,8 @@ export function SignUpForm() {
         spellCheck={false}
         placeholder="saturdayhunter"
         hint={`${USERNAME_HINT} This is your public profile at xlresale.com/u/…`}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         invalid={field === "username"}
       />
 
@@ -49,6 +56,8 @@ export function SignUpForm() {
         required
         autoComplete="email"
         placeholder="you@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         invalid={field === "email"}
       />
 
