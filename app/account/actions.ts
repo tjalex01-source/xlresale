@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { validateUsername, usernameErrorMessage } from "@/lib/username";
+import { MAX_RADIUS_MILES } from "@/lib/prefs";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -13,6 +14,7 @@ export async function signOut() {
 }
 
 export type SaveResult = { ok: true; message?: string } | { ok: false; message: string };
+
 
 /** Every action here re-checks auth: a Server Action is its own entry point. */
 async function requireUser() {
@@ -118,6 +120,10 @@ export async function saveHome(
     return { ok: false, message: "Pick your address from the suggestions." };
   }
 
+  if (formData.get("radius_miles") !== null && !(radius >= 1 && radius <= MAX_RADIUS_MILES)) {
+    return { ok: false, message: `Pick a distance between 1 and ${MAX_RADIUS_MILES} miles.` };
+  }
+
   if (address) {
     const { error } = await supabase
       .from("profiles")
@@ -127,10 +133,10 @@ export async function saveHome(
     if (error) return { ok: false, message: error.message };
   }
 
-  if (Number.isInteger(radius) && radius >= 1 && radius <= 100) {
+  if (Number.isFinite(radius) && radius >= 1 && radius <= MAX_RADIUS_MILES) {
     const { error } = await supabase
       .from("notification_prefs")
-      .update({ radius_miles: radius })
+      .update({ radius_miles: Math.round(radius) })
       .eq("profile_id", user.id);
     if (error) return { ok: false, message: error.message };
   }
