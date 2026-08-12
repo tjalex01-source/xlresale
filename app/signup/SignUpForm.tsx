@@ -19,7 +19,7 @@ export function SignUpForm() {
 
   if (state.status === "sent") {
     return (
-      <CheckYourEmail email={state.email}>
+      <CheckYourEmail email={state.email} existingAccountHint>
         Open the link to confirm your address and finish setting up your account. It expires in
         an hour.
       </CheckYourEmail>

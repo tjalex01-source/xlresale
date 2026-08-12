@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -163,9 +164,19 @@ export function FormError({ children }: { children: React.ReactNode }) {
 export function CheckYourEmail({
   email,
   children,
+  existingAccountHint = false,
 }: {
   email: string;
   children: React.ReactNode;
+  /**
+   * Signing up with an address that already has an account sends no email —
+   * Supabase reports success regardless, so the form can't be used to discover
+   * which addresses are registered. That's correct, but it leaves the person
+   * staring at "check your email" for a message that will never arrive. This
+   * line covers that case without confirming anything either way, because it's
+   * shown to everyone.
+   */
+  existingAccountHint?: boolean;
 }) {
   return (
     <div
@@ -178,6 +189,18 @@ export function CheckYourEmail({
         Sent to <span className="font-mono text-[13px]">{email}</span>.
       </p>
       <p className="mt-3 text-sm text-ink-soft">{children}</p>
+      {existingAccountHint && (
+        <p className="mt-3 text-sm text-ink-soft">
+          Nothing arriving? If this address already has an account, nothing was sent — use{" "}
+          <Link
+            href="/forgot-password"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-pink"
+          >
+            reset your password
+          </Link>{" "}
+          instead.
+        </p>
+      )}
     </div>
   );
 }

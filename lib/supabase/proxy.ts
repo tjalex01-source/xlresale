@@ -48,7 +48,23 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Safety net for auth codes that land somewhere they can't be used.
+  // Supabase falls back to the site root when a redirect target isn't on its
+  // allow-list, which strands the code on a page with nothing to exchange it —
+  // exactly what a password reset did when the allow-list covered the apex but
+  // not www. Route any stray code to the handler instead of losing it.
+  const code = searchParams.get("code");
+  if (code && pathname !== "/auth/callback") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    const next = searchParams.get("next");
+    url.search = "";
+    url.searchParams.set("code", code);
+    if (next?.startsWith("/") && !next.startsWith("//")) url.searchParams.set("next", next);
+    return NextResponse.redirect(url);
+  }
 
   if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone();
