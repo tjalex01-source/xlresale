@@ -21,6 +21,14 @@ export interface SaleStatusMeta {
   /** Pin, dot, and fill color. Calibrated against the canvas background. */
   color: string;
   /**
+   * The same color as a literal hex.
+   *
+   * Google Maps marker icons are data-URI SVGs rendered outside the document,
+   * where `var(--color-green)` resolves to nothing and the pin comes out black.
+   * Keep this in step with the token in globals.css.
+   */
+  hex: string;
+  /**
    * Text color for anything sitting on `tint`. The brand color only reaches
    * ~2.5:1 on its own tint, so never use it for small text — use this instead.
    */
@@ -36,6 +44,7 @@ export const SALE_STATUS_META: Record<SaleStatus, SaleStatusMeta> = {
     label: "Open today",
     detail: "Listed, not started yet.",
     color: "var(--color-pink)",
+    hex: "#ff2e63",
     textColor: "var(--color-pink-ink)",
     tint: "var(--color-pink-50)",
     pulse: false,
@@ -44,6 +53,7 @@ export const SALE_STATUS_META: Record<SaleStatus, SaleStatusMeta> = {
     label: "Open now",
     detail: "Host is out there. Go.",
     color: "var(--color-green)",
+    hex: "#12b76a",
     textColor: "var(--color-green-ink)",
     tint: "var(--color-green-50)",
     pulse: true,
@@ -52,6 +62,7 @@ export const SALE_STATUS_META: Record<SaleStatus, SaleStatusMeta> = {
     label: "Closing soon",
     detail: "Last call — make an offer.",
     color: "var(--color-tangerine)",
+    hex: "#ff9f1c",
     textColor: "var(--color-tangerine-ink)",
     tint: "var(--color-tangerine-50)",
     pulse: false,
@@ -60,6 +71,7 @@ export const SALE_STATUS_META: Record<SaleStatus, SaleStatusMeta> = {
     label: "Wrapped up",
     detail: "Done for the day.",
     color: "var(--color-grey)",
+    hex: "#8a8398",
     textColor: "var(--color-grey-ink)",
     tint: "#EFECF2",
     pulse: false,

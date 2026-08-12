@@ -206,3 +206,16 @@ as $$
 $$;
 
 grant execute on function public.sales_near_me(double precision, integer) to authenticated;
+
+-- ----------------------------------------------------------------------------
+-- 6. LOCK DOWN bulk_lot_audience
+-- ----------------------------------------------------------------------------
+-- The REVOKE above strips the PUBLIC grant, but Supabase ships ALTER DEFAULT
+-- PRIVILEGES that hand EXECUTE to anon and authenticated on every new function
+-- in `public`, and a default-privilege grant is a real grant — revoking PUBLIC
+-- does not touch it. Without this, a signed-out visitor can call a SECURITY
+-- DEFINER function that reads notification_prefs and home points.
+--
+-- It only ever returns a count, so the exposure was small; it is still a
+-- privileged function that should answer to signed-in callers only.
+revoke execute on function public.bulk_lot_audience(uuid) from anon;

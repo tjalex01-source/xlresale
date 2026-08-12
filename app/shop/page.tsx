@@ -111,6 +111,12 @@ export default async function ShopPage() {
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Link
+            href="/map"
+            className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
+          >
+            Open the map
+          </Link>
+          <Link
             href="/shop/alerts"
             className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-hair bg-panel px-4 text-sm font-semibold hover:border-pink hover:text-pink"
           >
