@@ -117,6 +117,12 @@ export default async function ShopPage() {
             Open the map
           </Link>
           <Link
+            href="/route"
+            className="inline-flex min-h-11 items-center rounded-[10px] border border-hair bg-panel px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+          >
+            Plan a route
+          </Link>
+          <Link
             href="/shop/alerts"
             className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-hair bg-panel px-4 text-sm font-semibold hover:border-pink hover:text-pink"
           >

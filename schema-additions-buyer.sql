@@ -219,3 +219,71 @@ grant execute on function public.sales_near_me(double precision, integer) to aut
 -- It only ever returns a count, so the exposure was small; it is still a
 -- privileged function that should answer to signed-in callers only.
 revoke execute on function public.bulk_lot_audience(uuid) from anon;
+
+-- ----------------------------------------------------------------------------
+-- 7. THE SHOPPER'S OWN HOME POINT
+-- ----------------------------------------------------------------------------
+-- The route planner runs in the browser (CLAUDE.md §10 solves client-side for
+-- <= 15 stops), so it needs the coordinates the route starts from. Everywhere
+-- else the home point deliberately stays server-side; here it cannot, because
+-- the leg maths and the drive-time request both need it.
+--
+-- This is not a widening of what a client can read: auth.uid() is the only row
+-- reachable, so a shopper gets their own address back and nobody else's. It
+-- exists because home_point is a geography column and PostgREST cannot project
+-- it to lat/lng on its own.
+create or replace function public.my_home_point()
+returns table (lat double precision, lng double precision)
+language sql
+stable
+as $$
+  select st_y(home_point::geometry), st_x(home_point::geometry)
+  from public.profiles
+  where id = auth.uid() and home_point is not null;
+$$;
+
+grant execute on function public.my_home_point() to authenticated;
+
+-- One saved route per shopper per day. Re-planning a Saturday should overwrite
+-- that Saturday rather than pile up rows nobody can tell apart.
+create unique index if not exists saved_routes_shopper_date_ux
+  on public.saved_routes (shopper_id, route_date);
+
+-- ----------------------------------------------------------------------------
+-- 8. THE SHOPPER'S SAVED SALES, WITH COORDINATES
+-- ----------------------------------------------------------------------------
+-- The route planner needs lat/lng for every candidate stop, and a saved sale is
+-- not necessarily inside the shopper's radius — someone can save a sale two
+-- towns over — so sales_near_me() is the wrong source for it.
+--
+-- Same nearby_sale shape as the browse and map queries so the planner, the map,
+-- and the dashboard all speak one type. SECURITY INVOKER: RLS on sale_watchers
+-- restricts this to the caller's own saves, and RLS on sales still hides
+-- anything unpublished.
+create or replace function public.my_saved_sales()
+returns setof public.nearby_sale
+language sql
+stable
+as $$
+  select
+    s.id, s.host_id, s.title, s.description, s.address,
+    st_y(s.location::geometry) as lat,
+    st_x(s.location::geometry) as lng,
+    s.sale_date, s.opens_at, s.closes_at, s.time_zone, s.status,
+    s.free_pile, s.discount_percent, s.discount_active,
+    coalesce(
+      st_distance(s.location, (select home_point from public.profiles where id = auth.uid()))
+        / 1609.344,
+      0
+    ) as distance_miles,
+    coalesce(array_agg(c.slug) filter (where c.slug is not null), '{}') as categories
+  from public.sale_watchers w
+  join public.sales s on s.id = w.sale_id
+  left join public.sale_categories sc on sc.sale_id = s.id
+  left join public.categories c on c.id = sc.category_id
+  where w.shopper_id = auth.uid()
+  group by s.id
+  order by s.sale_date, s.opens_at;
+$$;
+
+grant execute on function public.my_saved_sales() to authenticated;

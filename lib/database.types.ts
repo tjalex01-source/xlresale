@@ -703,6 +703,14 @@ export type Database = {
           title: string
         }[]
       }
+      my_saved_sales: {
+        Args: Record<string, never>
+        Returns: Database["public"]["Functions"]["sales_near_upcoming"]["Returns"]
+      }
+      my_home_point: {
+        Args: Record<string, never>
+        Returns: { lat: number; lng: number }[]
+      }
       sales_near_me: {
         Args: { in_miles?: number; in_days?: number }
         Returns: Database["public"]["Functions"]["sales_near_upcoming"]["Returns"]
