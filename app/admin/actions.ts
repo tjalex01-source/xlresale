@@ -110,6 +110,15 @@ export async function setSalePublished(saleId: string, published: boolean): Prom
     saleId,
   );
 
+  // Publishing queues wishlist matches via a database trigger; send them now so
+  // an alert lands while the sale is still worth driving to. The cron sweep is
+  // only a backstop, and awaiting here means a failure surfaces in the admin
+  // response rather than disappearing.
+  if (published) {
+    const { sendPendingAlerts } = await import("@/lib/notify");
+    await sendPendingAlerts();
+  }
+
   revalidatePath("/admin/sales");
   return { ok: true, message: published ? "Back on the map." : "Taken off the map." };
 }

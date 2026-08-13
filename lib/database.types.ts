@@ -254,6 +254,39 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          profile_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          profile_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          profile_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       sale_categories: {
         Row: {
           category_id: number
@@ -773,6 +806,23 @@ export type Database = {
       my_home_point: {
         Args: Record<string, never>
         Returns: { lat: number; lng: number }[]
+      }
+      pending_alerts: {
+        Args: { in_limit?: number }
+        Returns: {
+          alert_id: string
+          shopper_id: string
+          email_enabled: boolean
+          push_enabled: boolean
+          matched_term: string | null
+          sale_id: string
+          sale_title: string
+          sale_address: string
+          sale_date: string
+          opens_at: string
+          closes_at: string
+          free_pile: boolean
+        }[]
       }
       sales_near_me: {
         Args: { in_miles?: number; in_days?: number }

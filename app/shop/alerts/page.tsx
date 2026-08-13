@@ -7,6 +7,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { SaleCard } from "@/components/SaleCard";
 import { formatSaleDay } from "@/lib/sale-time";
 import type { SaleStatus } from "@/lib/database.types";
+import { InstallAndNotify } from "@/components/InstallAndNotify";
 import { AlertPrefs } from "./AlertPrefs";
 import { WishlistManager } from "./WishlistManager";
 import { markAlertsSeen } from "./actions";
@@ -137,6 +138,10 @@ export default async function AlertsPage() {
             categories={categories ?? []}
             defaultMiles={prefs?.radius_miles ?? 5}
           />
+        </Card>
+
+        <Card title="On your phone">
+          <InstallAndNotify />
         </Card>
 
         <Card title="How we reach you">

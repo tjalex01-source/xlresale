@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -24,6 +24,22 @@ export const metadata: Metadata = {
   title: "XLResale — garage sales, live",
   description:
     "Find garage, yard, and estate sales near you. See which ones are open right now, and plan a route that reaches them before they close.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    // iOS ignores the manifest's display mode; these are what make it open
+    // chrome-less from the home screen, and installing is also the only way
+    // Safari will allow web push at all.
+    capable: true,
+    title: "XLResale",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ff2e63",
+  // Most of this is used one-handed in a car park; let people zoom.
+  initialScale: 1,
+  width: "device-width",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
