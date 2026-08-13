@@ -7,7 +7,6 @@ import { formatSaleDay } from "@/lib/sale-time";
 import {
   DWELL_MINUTES,
   estimateLegs,
-  legKey,
   minutesToTime,
   optimizeOrder,
   scheduleRoute,

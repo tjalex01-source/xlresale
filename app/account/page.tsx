@@ -31,7 +31,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/account");
 
-  const [{ data: profile }, { data: prefs }, { count: saleCount }] = await Promise.all([
+  const [{ data: profile }, { data: prefs }, { count: saleCount }, { data: isAdmin }] = await Promise.all([
     supabase
       .from("profiles")
       .select("username, display_name, bio, is_public, home_address")
@@ -42,6 +42,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       .from("sales")
       .select("*", { count: "exact", head: true })
       .eq("host_id", user.id),
+    // Returns false for everyone else, so the card below simply doesn't render
+    // — /admin is a 404 to non-admins either way.
+    supabase.rpc("is_admin", {}),
   ]);
 
   return (
@@ -65,6 +68,20 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           >
             Password updated.
           </p>
+        )}
+
+        {isAdmin && (
+          <Card title="Admin">
+            <p className="mt-1 text-sm text-ink-soft">
+              Accounts, sales, and the record of what&rsquo;s been actioned.
+            </p>
+            <Link
+              href="/admin"
+              className="mt-4 inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
+            >
+              Open admin
+            </Link>
+          </Card>
         )}
 
         <Card title="Shopping">

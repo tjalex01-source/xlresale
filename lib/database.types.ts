@@ -25,6 +25,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          detail: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
+      admins: {
+        Row: {
+          created_at: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string
@@ -703,6 +748,24 @@ export type Database = {
           title: string
         }[]
       }
+      is_admin: {
+        Args: { uid?: string }
+        Returns: boolean
+      }
+      admin_accounts: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          username: string | null
+          display_name: string | null
+          created_at: string
+          sale_count: number
+          saved_count: number
+          find_count: number
+          wishlist_count: number
+          is_empty: boolean
+        }[]
+      }
       my_saved_sales: {
         Args: Record<string, never>
         Returns: Database["public"]["Functions"]["sales_near_upcoming"]["Returns"]
@@ -887,6 +950,8 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type PublicProfile = Database["public"]["Views"]["public_profiles"]["Row"];
 export type Wishlist = Database["public"]["Tables"]["wishlists"]["Row"];
 export type Find = Database["public"]["Tables"]["finds"]["Row"];
+export type AdminAccount =
+  Database["public"]["Functions"]["admin_accounts"]["Returns"][number];
 export type NotificationPrefs = Database["public"]["Tables"]["notification_prefs"]["Row"];
 
 /** A row from `sales_near_upcoming` — the week-at-a-time browse/map query. */

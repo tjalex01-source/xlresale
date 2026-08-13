@@ -10,7 +10,7 @@ import type { Database } from "@/lib/database.types";
  * putting a login wall in front of it would kill the growth loop. It handles
  * signed-out visitors itself by offering "Sign in to save".
  */
-const PROTECTED = ["/account", "/host", "/shop", "/route"];
+const PROTECTED = ["/account", "/host", "/shop", "/route", "/admin"];
 
 /** Paths that make no sense once you're signed in. */
 const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"];
