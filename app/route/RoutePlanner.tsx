@@ -189,8 +189,7 @@ export function RoutePlanner({
           />
         </div>
         <p className="text-sm text-muted">
-          {DWELL_MINUTES} minutes at each sale. Times are estimates until you pull real drive
-          times.
+          {DWELL_MINUTES} minutes at each sale. Times are rough until you pull real drive times.
         </p>
       </div>
 
@@ -295,7 +294,7 @@ export function RoutePlanner({
                 <p className="mt-2 text-sm text-muted">
                   {roadLegsFresh
                     ? "Using real road drive times."
-                    : "Using straight-line estimates — real roads take longer."}
+                    : "Rough estimates. Pull real drive times before you trust a tight one."}
                 </p>
               </div>
             )}

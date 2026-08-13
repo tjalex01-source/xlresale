@@ -72,9 +72,16 @@ export function haversineMiles(a: Point, b: Point): number {
 /**
  * Straight-line fallback leg times.
  *
- * Deliberately optimistic-free: roads are never shorter than the crow flies, so
- * these under-estimate drive time and the UI has to label them as estimates.
- * They exist so dragging stops around costs nothing.
+ * These exist so reordering stops costs nothing. They are genuinely rough and
+ * can err in either direction: the distance is always short (roads are never
+ * straighter than the crow flies) but ESTIMATE_MPH is a conservative
+ * town-driving figure, so a highway leg comes out slower than reality. Measured
+ * against the real matrix on a 10.9-mile leg, the estimate said 25 minutes and
+ * the road said 19.7.
+ *
+ * The practical consequence is that a route can look like it misses a sale when
+ * the real drive would have made it, which is why the UI offers real drive
+ * times rather than quietly trusting these.
  */
 export function estimateLegs(home: Point, stops: RouteStop[]): LegTimes {
   const legs: LegTimes = {};
