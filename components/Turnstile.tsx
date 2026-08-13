@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type TurnstileApi = {
   render: (
@@ -57,11 +57,42 @@ function loadTurnstile() {
  * is already spent, and a second attempt would fail CAPTCHA rather than showing
  * the real error. Changing this prop issues a fresh one.
  */
+/** How long to wait for a token before giving up and letting the server answer. */
+const WAIT_LIMIT_MS = 12_000;
+
 export function Turnstile({ resetSignal }: { resetSignal?: unknown }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const mountRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   const [token, setToken] = useState("");
+  const [waiting, setWaiting] = useState(false);
+
+  // Mirrors of the state above, for the submit listener. That listener is
+  // attached once and would otherwise close over the token from its first
+  // render and never see a later one.
+  const tokenRef = useRef("");
+  const statusRef = useRef<"loading" | "error">("loading");
+  const pendingSubmitRef = useRef(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const timerRef = useRef<number | null>(null);
+
+  /** Release a submit that was held back waiting for the bot check. */
+  const releaseHeldSubmit = useCallback(() => {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = null;
+    pendingSubmitRef.current = false;
+    setWaiting(false);
+    formRef.current?.requestSubmit();
+  }, []);
+
+  const applyToken = useCallback(
+    (value: string) => {
+      tokenRef.current = value;
+      setToken(value);
+      if (value && pendingSubmitRef.current) releaseHeldSubmit();
+    },
+    [releaseHeldSubmit],
+  );
 
   useEffect(() => {
     if (!siteKey) return;
@@ -75,19 +106,69 @@ export function Turnstile({ resetSignal }: { resetSignal?: unknown }) {
           sitekey: siteKey,
           // We keep the token in our own field so its name is predictable.
           "response-field": false,
-          callback: (t) => setToken(t),
-          "expired-callback": () => setToken(""),
-          "error-callback": () => setToken(""),
+          callback: (t) => applyToken(t),
+          "expired-callback": () => applyToken(""),
+          "error-callback": () => {
+            statusRef.current = "error";
+            applyToken("");
+            // A broken check must not become a locked door: let anything that
+            // was held go through, and let the server give the real reason.
+            if (pendingSubmitRef.current) releaseHeldSubmit();
+          },
         });
       })
       .catch(() => {
-        /* Offline or blocked — the field stays empty and the server decides. */
+        // Offline or blocked — same reasoning as an error callback.
+        statusRef.current = "error";
+        if (pendingSubmitRef.current) releaseHeldSubmit();
       });
 
     return () => {
       cancelled = true;
     };
-  }, [siteKey]);
+  }, [siteKey, applyToken, releaseHeldSubmit]);
+
+  /**
+   * Hold a submit that arrives before the token does, then send it on.
+   *
+   * Turnstile usually takes a second or two to hand over a token, and anyone
+   * who types their password quickly beats it. Previously that submitted an
+   * empty `captcha_token`, Supabase rejected it before ever looking at the
+   * password, and the person was told their verification expired — which reads
+   * as "your password is wrong" and is nobody's fault but ours.
+   *
+   * Capture phase, because React's own submit handling runs from the root on
+   * the bubble phase; stopping propagation here is what keeps the server action
+   * from firing early.
+   */
+  useEffect(() => {
+    if (!siteKey) return;
+
+    const form = mountRef.current?.closest("form") ?? null;
+    formRef.current = form;
+    if (!form) return;
+
+    const onSubmit = (event: Event) => {
+      if (tokenRef.current) return; // ready — nothing to do
+      if (statusRef.current === "error") return; // let the server explain
+
+      event.preventDefault();
+      event.stopPropagation();
+      pendingSubmitRef.current = true;
+      setWaiting(true);
+
+      timerRef.current = window.setTimeout(() => {
+        // Never strand someone behind a check that never finishes.
+        if (pendingSubmitRef.current) releaseHeldSubmit();
+      }, WAIT_LIMIT_MS);
+    };
+
+    form.addEventListener("submit", onSubmit, { capture: true });
+    return () => {
+      form.removeEventListener("submit", onSubmit, { capture: true });
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, [siteKey, releaseHeldSubmit]);
 
   const firstRun = useRef(true);
   useEffect(() => {
@@ -97,6 +178,7 @@ export function Turnstile({ resetSignal }: { resetSignal?: unknown }) {
     }
     if (widgetId.current && window.turnstile) {
       window.turnstile.reset(widgetId.current);
+      tokenRef.current = "";
       setToken("");
     }
   }, [resetSignal]);
@@ -105,8 +187,16 @@ export function Turnstile({ resetSignal }: { resetSignal?: unknown }) {
 
   return (
     <div>
+      {/* Shaves a round trip off the widget's first load, which is the whole
+          problem this component had. */}
+      <link rel="preconnect" href="https://challenges.cloudflare.com" />
       <div ref={mountRef} />
       <input type="hidden" name="captcha_token" value={token} />
+      {waiting && (
+        <p className="mt-2 text-sm text-muted" role="status" aria-live="polite">
+          One second — finishing the bot check, then signing you in.
+        </p>
+      )}
     </div>
   );
 }
