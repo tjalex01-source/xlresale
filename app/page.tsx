@@ -67,7 +67,9 @@ export default async function Home() {
     supabase.auth.getUser(),
     supabase
       .from("sales")
-      .select("*", { count: "exact", head: true })
+      // Named column, not *: anon and authenticated no longer hold SELECT on
+      // every column of sales, and PostgREST expands * before checking.
+      .select("id", { count: "exact", head: true })
       .eq("status", "live")
       .eq("listing_paid", true),
   ]);

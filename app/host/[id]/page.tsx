@@ -50,7 +50,8 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
   // Ownership is checked explicitly: a paid sale is publicly readable, and this
   // is the editing view, not the public one.
   const { data: sale } = await supabase
-    .from("sales")
+    // host_sales is scoped to auth.uid() and always returns the real address.
+    .from("host_sales")
     .select(
       "id, host_id, title, description, address, sale_date, opens_at, closes_at, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active",
     )

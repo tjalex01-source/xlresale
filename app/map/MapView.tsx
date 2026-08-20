@@ -288,6 +288,11 @@ export function MapView({
                 {formatMiles(selected.distance_miles)}
               </p>
               <p className="mt-0.5 truncate text-sm text-muted">{selected.address}</p>
+              {!selected.location_is_exact && (
+                <p className="mt-1 text-[13px] text-muted">
+                  Exact address shows when it opens.
+                </p>
+              )}
 
               {(selected.discount_active || selected.free_pile) && (
                 <div className="mt-2 flex flex-wrap gap-2">

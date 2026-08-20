@@ -15,7 +15,7 @@ import { SaveButton } from "./SaveButton";
 export async function generateMetadata({ params }: PageProps<"/s/[id]">): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: sale } = await supabase.from("sales").select("title, address").eq("id", id).maybeSingle();
+  const { data: sale } = await supabase.from("public_sales").select("title, address").eq("id", id).maybeSingle();
 
   if (!sale) return { title: "Sale not found — XLResale" };
   return {
@@ -32,16 +32,33 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // No listing_paid filter here on purpose — RLS already decides what's
-  // readable (published sales for everyone, drafts for their own host), so a
-  // host previewing their unpublished sale gets the real shopper view.
-  const { data: sale } = await supabase
-    .from("sales")
-    .select(
-      "id, host_id, title, description, address, sale_date, opens_at, closes_at, time_zone, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active",
-    )
+  // public_sales applies the address-precision policy on the way out (see
+  // schema-additions-address-policy.sql) — exact only while the sale is open,
+  // block level otherwise. Anon can't reach the underlying columns at all.
+  const { data: publicSale } = await supabase
+    .from("public_sales")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
+
+  // A host previewing their own draft isn't in the public view, so fall back to
+  // their own row. This is also what makes "view as a shopper" honest: the host
+  // sees the public view when the sale is published.
+  const { data: ownSale } = publicSale
+    ? { data: null }
+    : await supabase
+        .from("host_sales")
+        .select(
+          "id, host_id, title, description, address, sale_date, opens_at, closes_at, time_zone, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active",
+        )
+        .eq("id", id)
+        .maybeSingle();
+
+  const sale = publicSale
+    ? { ...publicSale, listing_paid: true }
+    : ownSale
+      ? { ...ownSale, location_is_exact: true }
+      : null;
 
   if (!sale) notFound();
 
@@ -110,6 +127,13 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
           {formatSaleDay(sale.sale_date)} · {formatHours(sale.opens_at, sale.closes_at)}
         </p>
         <p className="mt-1 text-ink-soft">{sale.address}</p>
+
+        {!sale.location_is_exact && (
+          <p className="mt-2 rounded-[10px] bg-panel px-3.5 py-2.5 text-sm text-ink-soft">
+            The full address appears here half an hour before the sale opens. Hosts&rsquo; exact
+            addresses stay private until then.
+          </p>
+        )}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {sale.discount_active && (

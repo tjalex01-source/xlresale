@@ -693,6 +693,33 @@ export type Database = {
       }
     }
     Views: {
+      public_sales: {
+        Row: {
+          id: string
+          host_id: string
+          title: string
+          description: string | null
+          address: string
+          lat: number
+          lng: number
+          sale_date: string
+          opens_at: string
+          closes_at: string
+          time_zone: string
+          status: Database["public"]["Enums"]["sale_status"]
+          free_pile: boolean
+          free_pile_note: string | null
+          discount_percent: number
+          discount_active: boolean
+          location_is_exact: boolean
+        }
+        Relationships: []
+      }
+      host_sales: {
+        Row: Database["public"]["Tables"]["sales"]["Row"]
+        Relationships: []
+      }
+
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -853,6 +880,7 @@ export type Database = {
           status: Database["public"]["Enums"]["sale_status"]
           time_zone: string
           title: string
+          location_is_exact: boolean
         }[]
       }
     }

@@ -40,7 +40,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     supabase.from("notification_prefs").select("radius_miles").eq("profile_id", user.id).single(),
     supabase
       .from("sales")
-      .select("*", { count: "exact", head: true })
+      // Named column, not *: anon and authenticated no longer hold SELECT on
+      // every column of sales, and PostgREST expands * before checking.
+      .select("id", { count: "exact", head: true })
       .eq("host_id", user.id),
     // Returns false for everyone else, so the card below simply doesn't render
     // — /admin is a 404 to non-admins either way.
