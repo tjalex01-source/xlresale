@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 import type { Database } from "@/lib/database.types";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 /**
  * Paths that require a signed-in user.
@@ -81,15 +82,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && SIGNED_OUT_ONLY.includes(pathname)) {
-    const url = request.nextUrl.clone();
     // Honour where they were trying to go. Without this, a link like
     // /login?next=/host/new — which is what the landing page CTAs are — silently
     // dumps an already-signed-in visitor on their account page instead of the
-    // thing they clicked.
-    const next = searchParams.get("next");
-    url.pathname = next?.startsWith("/") && !next.startsWith("//") ? next : "/account";
-    url.search = "";
-    return NextResponse.redirect(url);
+    // thing they clicked. Resolved rather than string-tested; see safeRedirect.
+    return NextResponse.redirect(safeRedirect(searchParams.get("next"), request.nextUrl.origin));
   }
 
   return response;

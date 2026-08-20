@@ -20,6 +20,11 @@ create table if not exists public.admins (
   created_at timestamptz not null default now()
 );
 
+-- INTENTIONAL: no policy is defined on this table, and that absence IS the
+-- enforcement. With RLS on and zero policies, anon and authenticated cannot
+-- read or write it through PostgREST under any circumstances; membership is
+-- changed only from the SQL editor or with the service role. is_admin() reads
+-- it as SECURITY DEFINER and returns nothing but a boolean.
 alter table public.admins enable row level security;
 
 -- SECURITY DEFINER so it can see a table nobody else can read. Returns only a

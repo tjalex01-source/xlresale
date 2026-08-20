@@ -21,7 +21,8 @@ export default async function FindsPage() {
     supabase.from("profiles").select("username").eq("id", user.id).single(),
     supabase
       .from("finds")
-      .select("*")
+      // Named rather than * so a column added later does not start shipping.
+      .select("id, title, note, price_paid, est_value, found_on, is_public, sale_id, photo_path, created_at, finder_id")
       .eq("finder_id", user.id)
       .order("found_on", { ascending: false }),
     supabase

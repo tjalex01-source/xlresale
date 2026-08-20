@@ -44,7 +44,12 @@ export async function POST(request: Request) {
     { onConflict: "endpoint" },
   );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // Logged server-side, generic to the browser: Postgres errors carry table
+    // and column names, and sometimes row values.
+    console.error("push subscribe failed:", error.message);
+    return NextResponse.json({ error: "Couldn't save this device." }, { status: 500 });
+  }
 
   // Granting the browser permission IS the opt-in, so turn the preference on
   // rather than making them agree a second time in our own UI.
@@ -68,7 +73,10 @@ export async function DELETE(request: Request) {
   // RLS scopes the delete to this user's own rows regardless of what endpoint
   // is passed, so a guessed endpoint can't unsubscribe somebody else.
   const { error } = await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("push unsubscribe failed:", error.message);
+    return NextResponse.json({ error: "Couldn't remove this device." }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

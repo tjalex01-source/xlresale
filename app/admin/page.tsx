@@ -25,12 +25,12 @@ export default async function AdminOverview() {
   const admin = createServiceClient();
 
   const [accounts, sales, published, watchers, finds, wishlists, recent] = await Promise.all([
-    admin.from("profiles").select("*", { count: "exact", head: true }),
-    admin.from("sales").select("*", { count: "exact", head: true }),
-    admin.from("sales").select("*", { count: "exact", head: true }).eq("listing_paid", true),
-    admin.from("sale_watchers").select("*", { count: "exact", head: true }),
-    admin.from("finds").select("*", { count: "exact", head: true }),
-    admin.from("wishlists").select("*", { count: "exact", head: true }),
+    admin.from("profiles").select("id", { count: "exact", head: true }),
+    admin.from("sales").select("id", { count: "exact", head: true }),
+    admin.from("sales").select("id", { count: "exact", head: true }).eq("listing_paid", true),
+    admin.from("sale_watchers").select("sale_id", { count: "exact", head: true }),
+    admin.from("finds").select("id", { count: "exact", head: true }),
+    admin.from("wishlists").select("id", { count: "exact", head: true }),
     admin
       .from("admin_actions")
       .select("action, target_type, target_id, detail, created_at")

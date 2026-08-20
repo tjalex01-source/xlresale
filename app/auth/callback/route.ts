@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 /**
  * Where the magic link lands. Supabase sends the browser here with a one-time
@@ -14,17 +15,19 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/account";
+  const next = searchParams.get("next");
 
   // Only ever redirect within this site — an open redirect here would let a
   // crafted link bounce a freshly-authenticated user to somewhere hostile.
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+  // Resolved and origin-compared rather than string-tested; see safeRedirect
+  // for why the obvious startsWith check isn't enough.
+  const target = safeRedirect(next, origin);
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${safeNext}`);
+      return NextResponse.redirect(target);
     }
   }
 
