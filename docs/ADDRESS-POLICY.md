@@ -42,10 +42,14 @@ Yes. *View as a shopper* on the host dashboard renders the public view — so a 
 sale shows the host exactly the coarsened address a stranger gets, at the same moment.
 
 **5. Is there a takedown path if a host feels unsafe mid-sale?**
-Partly. An admin can pull a sale off the map instantly from `/admin/sales`, which hides
-it everywhere without deleting anything. **A host cannot yet do this themselves** — that
-control is not built, and it should be: someone who feels unsafe should not have to wait
-for a human to answer. Tracked as the remaining gap here.
+Yes, and it belongs to the host. *Take it off the map now* on the sale dashboard removes
+the pin, the listing, and any pending alerts immediately — one tap, no confirmation step,
+because the friction belongs on putting it back rather than on taking it down. The listing
+is not refunded or deleted, and the host can restore it whenever they want.
+
+An admin can also take a sale down. When they do, `hidden_by_admin` is set and the host
+cannot reverse it — otherwise a moderation decision would last exactly as long as it took
+the host to tap *show again*.
 
 ---
 
