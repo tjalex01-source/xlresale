@@ -444,6 +444,8 @@ export type Database = {
       }
       sales: {
         Row: {
+          hidden_at: string | null
+          hidden_by_admin: boolean
           address: string
           closes_at: string
           created_at: string
@@ -468,6 +470,8 @@ export type Database = {
           went_live_at: string | null
         }
         Insert: {
+          hidden_at?: string | null
+          hidden_by_admin?: boolean
           address: string
           closes_at: string
           created_at?: string
@@ -492,6 +496,8 @@ export type Database = {
           went_live_at?: string | null
         }
         Update: {
+          hidden_at?: string | null
+          hidden_by_admin?: boolean
           address?: string
           closes_at?: string
           created_at?: string
@@ -807,6 +813,14 @@ export type Database = {
           time_zone: string
           title: string
         }[]
+      }
+      set_sale_hidden: {
+        Args: { in_sale_id: string; in_hidden: boolean }
+        Returns: string
+      }
+      rate_limit_hit: {
+        Args: { in_bucket: string; in_limit: number; in_window_seconds: number }
+        Returns: boolean
       }
       is_admin: {
         Args: { uid?: string }

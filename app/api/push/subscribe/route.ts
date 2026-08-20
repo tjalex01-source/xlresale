@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { allow, LIMITS } from "@/lib/rate-limit";
 
 /**
  * Register or drop this device for web push.
@@ -16,6 +17,10 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+
+  if (!(await allow(`push-subscribe:${user.id}`, LIMITS.pushSubscribePerUser.limit, LIMITS.pushSubscribePerUser.windowSeconds))) {
+    return NextResponse.json({ error: "Too many attempts. Try again shortly." }, { status: 429 });
+  }
 
   let body: {
     endpoint?: string;

@@ -157,3 +157,52 @@ export async function deleteItem(saleId: string, itemId: string): Promise<Action
   revalidatePath(`/host/${saleId}`);
   return { ok: true };
 }
+
+export type HideResult = { ok: true; hidden: boolean; message: string } | { ok: false; message: string };
+
+/**
+ * Pull a sale off the map, or put it back.
+ *
+ * This is the takedown path a host needs when they feel unsafe mid-sale —
+ * someone in that position should not have to wait for a human to answer an
+ * email. It's instant and it's reversible.
+ *
+ * Visibility only: it never touches `listing_paid`, so a takedown is not a
+ * refund and restoring it can't re-fire the wishlist alerts. All the
+ * authorisation lives in set_sale_hidden() (schema-additions-takedown.sql),
+ * including the rule that a host cannot undo an admin's takedown.
+ */
+export async function setSaleHidden(saleId: string, hidden: boolean): Promise<HideResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { ok: false, message: "You're signed out. Sign in and try again." };
+
+  const { data, error } = await supabase.rpc("set_sale_hidden", {
+    in_sale_id: saleId,
+    in_hidden: hidden,
+  });
+
+  if (error) {
+    console.error("set_sale_hidden failed:", error.message);
+    return { ok: false, message: "Couldn't change that just now." };
+  }
+
+  switch (data) {
+    case "hidden":
+      return { ok: true, hidden: true, message: "Off the map. Nobody can find it now." };
+    case "visible":
+      return { ok: true, hidden: false, message: "Back on the map." };
+    case "admin_locked":
+      return {
+        ok: false,
+        message: "This sale was taken down by XLResale. Get in touch and we'll look at it.",
+      };
+    case "forbidden":
+      return { ok: false, message: "That isn't your sale." };
+    default:
+      return { ok: false, message: "That sale no longer exists." };
+  }
+}

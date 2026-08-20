@@ -10,6 +10,7 @@ import { SALE_STATUS_META } from "@/lib/sale-status";
 import { GoLiveCard } from "./GoLiveCard";
 import { FeaturedItems } from "./FeaturedItems";
 import { FreePileToggle } from "./FreePileToggle";
+import { TakedownCard } from "./TakedownCard";
 
 export const metadata: Metadata = { title: "Your sale — XLResale" };
 
@@ -53,7 +54,7 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
     // host_sales is scoped to auth.uid() and always returns the real address.
     .from("host_sales")
     .select(
-      "id, host_id, title, description, address, sale_date, opens_at, closes_at, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active",
+      "id, host_id, title, description, address, sale_date, opens_at, closes_at, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active, hidden_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -151,6 +152,13 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
             on={sale.free_pile}
             note={sale.free_pile_note ?? ""}
           />
+        </Card>
+
+        <Card
+          title="Take it down"
+          hint="If you ever feel uneasy about who is turning up, use this."
+        >
+          <TakedownCard saleId={sale.id} initialHidden={sale.hidden_at !== null} />
         </Card>
 
         <Card title="Photos" hint="Sales with photos get more visits.">

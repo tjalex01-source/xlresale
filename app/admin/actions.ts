@@ -89,19 +89,33 @@ export async function deleteUser(userId: string): Promise<Result> {
 /**
  * Take a sale off the public map, or put it back.
  *
- * Flips `listing_paid`, which is the same flag the map, the browse list, and
- * every RPC filter on. Note this is the one place outside the Stripe webhook
- * that writes it (CLAUDE.md §13 says payment state is server-truth) — which is
- * exactly what it is here: a server-side admin decision, never a client write.
+ * Writes `hidden_at`, not `listing_paid`. Using the payment flag as a
+ * visibility switch was wrong twice over: CLAUDE.md §13 reserves it for the
+ * verified Stripe webhook, and flipping it false -> true on restore is exactly
+ * the transition sales_queue_alerts watches — so every restore would re-blast
+ * the wishlist alerts for that sale to everyone who matched it.
+ *
+ * `hidden_by_admin` is what stops the host tapping "show again" to undo a
+ * moderation decision.
  */
 export async function setSalePublished(saleId: string, published: boolean): Promise<Result> {
   const auth = await assertAdmin();
   if (!auth.ok) return auth;
 
   const admin = createServiceClient();
-  const { error } = await admin.from("sales").update({ listing_paid: published }).eq("id", saleId);
+  const { error } = await admin
+    .from("sales")
+    .update(
+      published
+        ? { hidden_at: null, hidden_by_admin: false }
+        : { hidden_at: new Date().toISOString(), hidden_by_admin: true },
+    )
+    .eq("id", saleId);
 
-  if (error) return { ok: false, message: error.message };
+  if (error) {
+    console.error("admin setSalePublished failed:", error.message);
+    return { ok: false, message: "Couldn't change that just now." };
+  }
 
   await logAdminAction(
     auth.userId,

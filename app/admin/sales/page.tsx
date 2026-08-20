@@ -46,7 +46,7 @@ export default async function AdminSales({ searchParams }: PageProps<"/admin/sal
   const [{ data: sales }, { data: profiles }, { data: watchers }] = await Promise.all([
     admin
       .from("sales")
-      .select("id, title, address, sale_date, status, listing_paid, host_id")
+      .select("id, title, address, sale_date, status, listing_paid, hidden_at, host_id")
       .order("sale_date", { ascending: false })
       .limit(500),
     admin.from("profiles").select("id, username"),
@@ -67,7 +67,8 @@ export default async function AdminSales({ searchParams }: PageProps<"/admin/sal
     address: s.address,
     saleDate: s.sale_date,
     status: s.status,
-    published: s.listing_paid,
+    // "On the map" now means paid AND not hidden.
+    published: s.listing_paid && s.hidden_at === null,
     hostHandle: handleById.get(s.host_id) ?? null,
     hostId: s.host_id,
     watcherCount: watcherCounts.get(s.id) ?? 0,
@@ -84,7 +85,7 @@ export default async function AdminSales({ searchParams }: PageProps<"/admin/sal
   if (filter === "live") rows = rows.filter((s) => s.published);
   if (filter === "draft") rows = rows.filter((s) => !s.published);
 
-  const draftCount = (sales ?? []).filter((s) => !s.listing_paid).length;
+  const draftCount = (sales ?? []).filter((s) => !s.listing_paid || s.hidden_at !== null).length;
 
   return (
     <>

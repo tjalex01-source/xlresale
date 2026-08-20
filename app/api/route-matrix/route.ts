@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { legKey, type LegTimes } from "@/lib/route";
+import { allow, LIMITS } from "@/lib/rate-limit";
 
 /**
  * Real road drive times between every pair of route points.
@@ -33,6 +34,22 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Sign in to get drive times." }, { status: 401 });
+  }
+
+  // Checked before anything else costs money. Per-user first so one person
+  // hammering it gets told off without eating into everyone else's allowance,
+  // then the global ceiling that keeps a busy day inside the Google quota.
+  if (!(await allow(`route-matrix:${user.id}`, LIMITS.routeMatrixPerUser.limit, LIMITS.routeMatrixPerUser.windowSeconds))) {
+    return NextResponse.json(
+      { error: "That's a lot of routes in one go. Try again in a bit." },
+      { status: 429 },
+    );
+  }
+  if (!(await allow("route-matrix:global", LIMITS.routeMatrixGlobal.limit, LIMITS.routeMatrixGlobal.windowSeconds))) {
+    return NextResponse.json(
+      { error: "Drive times are resting for today. Estimates still work." },
+      { status: 429 },
+    );
   }
 
   const key = process.env.GOOGLE_MAPS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
