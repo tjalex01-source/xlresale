@@ -444,6 +444,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          reschedule_count: number
           hidden_at: string | null
           hidden_by_admin: boolean
           address: string
@@ -470,6 +471,7 @@ export type Database = {
           went_live_at: string | null
         }
         Insert: {
+          reschedule_count?: number
           hidden_at?: string | null
           hidden_by_admin?: boolean
           address: string
@@ -496,6 +498,7 @@ export type Database = {
           went_live_at?: string | null
         }
         Update: {
+          reschedule_count?: number
           hidden_at?: string | null
           hidden_by_admin?: boolean
           address?: string
@@ -585,6 +588,8 @@ export type Database = {
       }
       wishlist_alerts: {
         Row: {
+          kind: string
+          note: string | null
           created_at: string
           id: string
           matched_term: string | null
@@ -595,6 +600,8 @@ export type Database = {
           wishlist_id: string | null
         }
         Insert: {
+          kind?: string
+          note?: string | null
           created_at?: string
           id?: string
           matched_term?: string | null
@@ -605,6 +612,8 @@ export type Database = {
           wishlist_id?: string | null
         }
         Update: {
+          kind?: string
+          note?: string | null
           created_at?: string
           id?: string
           matched_term?: string | null
@@ -822,6 +831,14 @@ export type Database = {
         Args: { in_bucket: string; in_limit: number; in_window_seconds: number }
         Returns: boolean
       }
+      notify_sale_watchers: {
+        Args: { in_sale_id: string; in_kind: string; in_note: string }
+        Returns: number
+      }
+      sale_move_miles: {
+        Args: { in_sale_id: string; in_lat: number; in_lng: number }
+        Returns: number
+      }
       is_admin: {
         Args: { uid?: string }
         Returns: boolean
@@ -863,6 +880,8 @@ export type Database = {
           opens_at: string
           closes_at: string
           free_pile: boolean
+          kind: string
+          note: string | null
         }[]
       }
       sales_near_me: {

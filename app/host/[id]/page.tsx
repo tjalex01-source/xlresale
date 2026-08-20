@@ -80,7 +80,10 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
         <Link href="/" className="inline-block hover:text-pink">
           <Wordmark className="!text-xl" />
         </Link>
-        <Link href={`/s/${id}`} className="ml-auto text-sm font-semibold hover:text-pink">
+        <Link href={`/host/${id}/edit`} className="ml-auto text-sm font-semibold hover:text-pink">
+          Edit
+        </Link>
+        <Link href={`/s/${id}`} className="text-sm font-semibold hover:text-pink">
           View as a shopper
         </Link>
         <Link href="/host" className="text-sm font-semibold hover:text-pink">

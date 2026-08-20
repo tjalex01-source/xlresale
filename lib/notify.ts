@@ -42,22 +42,56 @@ type PendingAlert = {
   opens_at: string;
   closes_at: string;
   free_pile: boolean;
+  kind: string;
+  note: string | null;
 };
+
+/**
+ * Subject line and opening sentence for each kind of alert.
+ *
+ * `rescheduled` and `moved` go to people who deliberately saved this sale, so
+ * they lead with what changed. A wishlist `match` goes to someone who has never
+ * heard of it, so it leads with why they're hearing from us at all.
+ */
+function headlineFor(alert: PendingAlert): { subject: string; lede: string } {
+  switch (alert.kind) {
+    case "rescheduled":
+      return {
+        subject: `A sale you saved moved to a new date`,
+        lede: `The host moved this one — it's ${alert.note ?? "on a new date"}. Still on your list.`,
+      };
+    case "moved":
+      return {
+        subject: `A sale you saved changed address`,
+        lede: `The host moved this one to a different address. Worth checking before you set off.`,
+      };
+    default:
+      return {
+        subject: alert.matched_term
+          ? `Someone near you listed ${alert.matched_term}`
+          : "A sale near you just went up",
+        lede: alert.matched_term
+          ? `You're watching for "${alert.matched_term}", and a sale near you just listed it.`
+          : "A sale near you just went up.",
+      };
+  }
+}
 
 function emailBody(alert: PendingAlert) {
   const when = `${formatSaleDay(alert.sale_date)}, ${formatHours(alert.opens_at, alert.closes_at)}`;
   const url = `${SITE}/s/${alert.sale_id}`;
 
+  // Three different things arrive through one queue, so the copy has to say
+  // which one this is. Someone who saved a sale and is told "somebody listed a
+  // skillet" when the real news is "it moved to Sunday" has been misled by us.
+  const { subject, lede } = headlineFor(alert);
+
   return {
-    subject: alert.matched_term
-      ? `Someone near you listed ${alert.matched_term}`
-      : "A sale near you just went up",
+    subject,
     // Plain, scannable, and useful in the preview line — this arrives on a
     // phone on a Friday night and has about two seconds to earn a tap.
     text: [
-      alert.matched_term
-        ? `You're watching for "${alert.matched_term}", and a sale near you just listed it.`
-        : `A sale near you just went up.`,
+      lede,
       ``,
       alert.sale_title,
       alert.sale_address,
@@ -72,13 +106,7 @@ function emailBody(alert: PendingAlert) {
       .join("\n"),
     html: `
       <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;color:#17131f">
-        <p style="font-size:17px;margin:0 0 16px">
-          ${
-            alert.matched_term
-              ? `You're watching for <strong>${escapeHtml(alert.matched_term)}</strong>, and a sale near you just listed it.`
-              : `A sale near you just went up.`
-          }
-        </p>
+        <p style="font-size:17px;margin:0 0 16px">${escapeHtml(lede)}</p>
         <div style="border:1px solid #e9e5ee;border-radius:16px;padding:16px;margin:0 0 20px">
           <p style="font-size:19px;font-weight:700;margin:0 0 6px">${escapeHtml(alert.sale_title)}</p>
           <p style="margin:0 0 4px;color:#5b5468">${escapeHtml(alert.sale_address)}</p>
@@ -146,9 +174,7 @@ async function sendPush(alert: PendingAlert): Promise<{ sent: number; error?: st
   if (!subscriptions?.length) return { sent: 0 };
 
   const payload = JSON.stringify({
-    title: alert.matched_term
-      ? `Someone near you listed ${alert.matched_term}`
-      : "A sale near you just went up",
+    title: headlineFor(alert).subject,
     body: `${alert.sale_title} — ${formatSaleDay(alert.sale_date)}, ${formatHours(alert.opens_at, alert.closes_at)}`,
     url: `/s/${alert.sale_id}`,
     tag: `sale-${alert.sale_id}`,
