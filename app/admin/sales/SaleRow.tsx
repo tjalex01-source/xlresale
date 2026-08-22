@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
-import { deleteSale, setSalePublished } from "../actions";
+import { compListing, deleteSale, setSalePublished } from "../actions";
 import { SALE_STATUS_META } from "@/lib/sale-status";
 import type { SaleStatus } from "@/lib/database.types";
 
@@ -14,6 +14,7 @@ export interface AdminSale {
   saleDate: string;
   status: SaleStatus;
   published: boolean;
+  listingPaid: boolean;
   hostHandle: string | null;
   hostId: string;
   watcherCount: number;
@@ -22,6 +23,8 @@ export interface AdminSale {
 export function SaleRow({ sale }: { sale: AdminSale }) {
   const [pending, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [comping, setComping] = useState(false);
+  const [reason, setReason] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [gone, setGone] = useState(false);
 
@@ -57,19 +60,29 @@ export function SaleRow({ sale }: { sale: AdminSale }) {
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const result = await setSalePublished(sale.id, !sale.published);
-                setMessage(result.ok ? (result.message ?? "Done.") : result.message);
-              })
-            }
-            className="min-h-11 rounded-[10px] border border-hair px-3 text-sm font-semibold hover:border-pink hover:text-pink disabled:opacity-50"
-          >
-            {sale.published ? "Take off map" : "Put back"}
-          </button>
+          {sale.listingPaid ? (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await setSalePublished(sale.id, !sale.published);
+                  setMessage(result.ok ? (result.message ?? "Done.") : result.message);
+                })
+              }
+              className="min-h-11 rounded-[10px] border border-hair px-3 text-sm font-semibold hover:border-pink hover:text-pink disabled:opacity-50"
+            >
+              {sale.published ? "Take off map" : "Put back"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setComping((c) => !c)}
+              className="min-h-11 rounded-[10px] border border-green px-3 text-sm font-bold text-green-ink hover:bg-green-50"
+            >
+              Publish free
+            </button>
+          )}
 
           {confirmingDelete ? (
             <>
@@ -106,6 +119,38 @@ export function SaleRow({ sale }: { sale: AdminSale }) {
           )}
         </div>
       </div>
+
+      {comping && (
+        <div className="mt-3 rounded-[10px] border border-green/40 bg-green-50 p-3.5">
+          <p className="text-sm text-green-ink">
+            Puts this on the map without payment and sends any wishlist alerts. Recorded as a
+            comp, so it never counts as revenue.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Why — pilot host, rain check, apology…"
+              maxLength={200}
+              className="min-w-56 flex-1 rounded-[10px] border border-hair bg-panel px-3.5 py-2.5 text-base outline-none focus:border-pink"
+            />
+            <button
+              type="button"
+              disabled={pending || !reason.trim()}
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await compListing(sale.id, reason);
+                  setMessage(result.ok ? (result.message ?? "Done.") : result.message);
+                  if (result.ok) setComping(false);
+                })
+              }
+              className="min-h-11 rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas disabled:opacity-50"
+            >
+              {pending ? "Publishing…" : "Publish it"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {confirmingDelete && (
         <p className="mt-3 rounded-[10px] bg-pink-50 px-3.5 py-2.5 text-sm text-pink-ink">

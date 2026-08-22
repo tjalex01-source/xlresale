@@ -28,7 +28,7 @@ export type Database = {
       admin_actions: {
         Row: {
           action: string
-          actor_id: string
+          actor_id: string | null
           created_at: string
           detail: Json | null
           id: string
@@ -444,6 +444,8 @@ export type Database = {
       }
       sales: {
         Row: {
+          comped_at: string | null
+          comped_reason: string | null
           reschedule_count: number
           hidden_at: string | null
           hidden_by_admin: boolean
@@ -471,6 +473,8 @@ export type Database = {
           went_live_at: string | null
         }
         Insert: {
+          comped_at?: string | null
+          comped_reason?: string | null
           reschedule_count?: number
           hidden_at?: string | null
           hidden_by_admin?: boolean
@@ -498,6 +502,8 @@ export type Database = {
           went_live_at?: string | null
         }
         Update: {
+          comped_at?: string | null
+          comped_reason?: string | null
           reschedule_count?: number
           hidden_at?: string | null
           hidden_by_admin?: boolean
@@ -838,6 +844,16 @@ export type Database = {
       sale_move_miles: {
         Args: { in_sale_id: string; in_lat: number; in_lng: number }
         Returns: number
+      }
+      my_account_footprint: {
+        Args: Record<string, never>
+        Returns: {
+          sales_count: number
+          saved_count: number
+          finds_count: number
+          wishlists_count: number
+          devices_count: number
+        }[]
       }
       is_admin: {
         Args: { uid?: string }

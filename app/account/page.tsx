@@ -174,6 +174,26 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           </Link>
         </Card>
 
+        <Card title="Your data">
+          <p className="mt-1 text-sm text-ink-soft">
+            What we collect and why, and how to remove it.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/privacy"
+              className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/account/delete"
+              className="inline-flex min-h-11 items-center rounded-[10px] px-4 text-sm font-semibold text-muted hover:text-pink"
+            >
+              Delete my account
+            </Link>
+          </div>
+        </Card>
+
         <form action={signOut} className="mt-8">
           <button
             type="submit"

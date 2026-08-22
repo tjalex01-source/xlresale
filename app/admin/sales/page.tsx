@@ -69,6 +69,7 @@ export default async function AdminSales({ searchParams }: PageProps<"/admin/sal
     status: s.status,
     // "On the map" now means paid AND not hidden.
     published: s.listing_paid && s.hidden_at === null,
+    listingPaid: s.listing_paid,
     hostHandle: handleById.get(s.host_id) ?? null,
     hostId: s.host_id,
     watcherCount: watcherCounts.get(s.id) ?? 0,

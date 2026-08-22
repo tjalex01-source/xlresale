@@ -160,3 +160,68 @@ export async function deleteSale(saleId: string): Promise<Result> {
   revalidatePath("/admin/sales");
   return { ok: true, message: "Sale deleted." };
 }
+
+/**
+ * Publish a listing without payment.
+ *
+ * CLAUDE.md §13 reserves `listing_paid` for the verified Stripe webhook, and
+ * this is the one deliberate exception — so it stamps `comped_at` rather than
+ * impersonating a payment. Without that, every future revenue figure quietly
+ * counts listings nobody paid for.
+ *
+ * It's the brief's "rain-check credit — a free relist rather than a cash
+ * refund" by another name, and until Stripe exists it's the only way a real
+ * host's sale can reach the map at all.
+ *
+ * Admin-only and audited, because an un-gated version of this is simply free
+ * listings for anyone who finds the endpoint.
+ */
+export async function compListing(saleId: string, reason: string): Promise<Result> {
+  const auth = await assertAdmin();
+  if (!auth.ok) return auth;
+
+  const note = reason.trim();
+  if (!note) return { ok: false, message: "Say why — it goes in the record." };
+  if (note.length > 200) return { ok: false, message: "Keep the reason short." };
+
+  const admin = createServiceClient();
+
+  const { data: sale } = await admin
+    .from("sales")
+    .select("title, listing_paid, host_id")
+    .eq("id", saleId)
+    .maybeSingle();
+
+  if (!sale) return { ok: false, message: "That sale no longer exists." };
+  if (sale.listing_paid) return { ok: false, message: "That one's already on the map." };
+
+  const { error } = await admin
+    .from("sales")
+    .update({
+      listing_paid: true,
+      comped_at: new Date().toISOString(),
+      comped_reason: note,
+      hidden_at: null,
+      hidden_by_admin: false,
+    })
+    .eq("id", saleId);
+
+  if (error) {
+    console.error("compListing failed:", error.message);
+    return { ok: false, message: "Couldn't publish that just now." };
+  }
+
+  await logAdminAction(auth.userId, "sale.comp", "sale", saleId, {
+    title: sale.title ?? null,
+    host_id: sale.host_id ?? null,
+    reason: note,
+  });
+
+  // Publishing queues wishlist matches via the database trigger; send them now
+  // rather than waiting for the nightly sweep.
+  const { sendPendingAlerts } = await import("@/lib/notify");
+  await sendPendingAlerts();
+
+  revalidatePath("/admin/sales");
+  return { ok: true, message: "On the map. Alerts sent." };
+}
