@@ -19,8 +19,7 @@ export default async function NewSalePage() {
   if (!user) redirect("/login?next=/host/new");
 
   const { data: categories } = await supabase
-    .from("categories")
-    .select("id, label")
+    .from("categories").select("id, label, color, parent_id, position")
     .order("id");
 
   return (

@@ -4,12 +4,13 @@ import { useActionState, useState, useTransition } from "react";
 
 import { Field, FormError, SubmitButton } from "@/components/form";
 import { MAX_RADIUS_MILES } from "@/lib/prefs";
+import { CategoryPicker, type PickerCategory } from "@/components/CategoryPicker";
 import { addWishlist, removeWishlist, setWishlistActive, type Result } from "./actions";
-import type { Category, Wishlist } from "@/lib/database.types";
+import type { Wishlist } from "@/lib/database.types";
 
-function Row({ item, categories }: { item: Wishlist; categories: Category[] }) {
+function Row({ item, categories }: { item: Wishlist; categories: PickerCategory[] }) {
   const [pending, startTransition] = useTransition();
-  const category = categories.find((c) => c.id === item.category_id);
+  const chosen = categories.filter((c) => item.category_ids.includes(c.id));
 
   return (
     <li
@@ -18,10 +19,22 @@ function Row({ item, categories }: { item: Wishlist; categories: Category[] }) {
       }`}
     >
       <span className="min-w-0 flex-1">
-        <span className="font-semibold">{item.term}</span>
-        <span className="ml-2 font-mono text-[13px] text-muted">
-          within {item.max_miles} mi{category ? ` · ${category.label}` : ""}
-        </span>
+        {item.term && <span className="font-semibold">{item.term}</span>}
+        {chosen.length > 0 && (
+          <span className={item.term ? "ml-2" : ""}>
+            {chosen.map((c) => (
+              <span
+                key={c.id}
+                className="mr-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-semibold"
+                style={{ backgroundColor: `${c.color}1f` }}
+              >
+                <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: c.color }} />
+                {c.label}
+              </span>
+            ))}
+          </span>
+        )}
+        <span className="ml-1 font-mono text-[13px] text-muted">within {item.max_miles} mi</span>
       </span>
 
       <button
@@ -51,7 +64,7 @@ export function WishlistManager({
   defaultMiles,
 }: {
   items: Wishlist[];
-  categories: Category[];
+  categories: PickerCategory[];
   defaultMiles: number;
 }) {
   const [result, action] = useActionState<Result | null, FormData>(addWishlist, null);
@@ -70,13 +83,19 @@ export function WishlistManager({
       )}
 
       <form action={action} className="space-y-4">
+        <div>
+          <p className="text-sm font-semibold">What are you after?</p>
+          <div className="mt-2">
+            <CategoryPicker categories={categories} />
+          </div>
+        </div>
+
         <Field
-          label="What are you after?"
+          label="Or something specific"
           name="term"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           placeholder="cast iron skillet"
-          hint="One thing per alert. We'll email you when a sale near you lists it."
           maxLength={60}
           invalid={result?.ok === false}
         />
@@ -100,24 +119,6 @@ export function WishlistManager({
             </div>
           </div>
 
-          <div className="min-w-48 flex-1">
-            <label htmlFor="category_id" className="block text-sm font-semibold">
-              Category <span className="font-normal text-muted">(optional)</span>
-            </label>
-            <select
-              id="category_id"
-              name="category_id"
-              defaultValue=""
-              className="mt-1.5 w-full rounded-[10px] border border-hair bg-panel px-3.5 py-2.5 text-base outline-none focus:border-pink"
-            >
-              <option value="">Any</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         <SubmitButton pending="Adding…">Add alert</SubmitButton>

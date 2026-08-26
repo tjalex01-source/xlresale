@@ -72,18 +72,24 @@ export type Database = {
       }
       categories: {
         Row: {
+          parent_id: number | null
+          position: number
           color: string
           id: number
           label: string
           slug: string
         }
         Insert: {
+          parent_id?: number | null
+          position?: number
           color: string
           id?: number
           label: string
           slug: string
         }
         Update: {
+          parent_id?: number | null
+          position?: number
           color?: string
           id?: number
           label?: string
@@ -662,31 +668,34 @@ export type Database = {
       }
       wishlists: {
         Row: {
+          category_ids: number[]
           active: boolean
           category_id: number | null
           created_at: string
           id: string
           max_miles: number
           shopper_id: string
-          term: string
+          term: string | null
         }
         Insert: {
+          category_ids?: number[]
           active?: boolean
           category_id?: number | null
           created_at?: string
           id?: string
           max_miles?: number
           shopper_id: string
-          term: string
+          term?: string | null
         }
         Update: {
+          category_ids?: number[]
           active?: boolean
           category_id?: number | null
           created_at?: string
           id?: string
           max_miles?: number
           shopper_id?: string
-          term?: string
+          term?: string | null
         }
         Relationships: [
           {
@@ -854,6 +863,10 @@ export type Database = {
           wishlists_count: number
           devices_count: number
         }[]
+      }
+      category_match_set: {
+        Args: { in_ids: number[] }
+        Returns: number[]
       }
       is_admin: {
         Args: { uid?: string }

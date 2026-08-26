@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 
 import { AddressField, type PickedAddress } from "@/components/AddressField";
 import { Field, FormError, SubmitButton } from "@/components/form";
+import { CategoryPicker, type PickerCategory } from "@/components/CategoryPicker";
 import { createSaleDraft, type SaleDraftState } from "./actions";
 
 /**
@@ -21,7 +22,7 @@ const ZONES = [
   { value: "Pacific/Honolulu", label: "Hawaii" },
 ];
 
-export function SaleForm({ categories }: { categories: { id: number; label: string }[] }) {
+export function SaleForm({ categories }: { categories: PickerCategory[] }) {
   const [state, action] = useActionState<SaleDraftState, FormData>(createSaleDraft, {
     status: "idle",
   });
@@ -99,22 +100,11 @@ export function SaleForm({ categories }: { categories: { id: number; label: stri
 
       <fieldset>
         <legend className="text-sm font-semibold">What have you got?</legend>
-        <p className="mt-1 text-sm text-muted">Pick any that fit. It drives the map filters.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <label
-              key={c.id}
-              className="cursor-pointer rounded-[10px] border border-hair bg-panel px-4 py-2.5 text-sm font-semibold has-[:checked]:border-pink has-[:checked]:bg-pink-50 has-[:checked]:text-pink-ink"
-            >
-              <input
-                type="checkbox"
-                name="category_ids"
-                value={c.id}
-                className="sr-only"
-              />
-              {c.label}
-            </label>
-          ))}
+        <p className="mt-1 text-sm text-muted">
+          This is how shoppers find you. Tap for more specific options.
+        </p>
+        <div className="mt-3">
+          <CategoryPicker categories={categories} />
         </div>
       </fieldset>
 

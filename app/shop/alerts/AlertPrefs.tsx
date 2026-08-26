@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 
 import { FormError, SubmitButton } from "@/components/form";
 import { saveAlertPrefs, type Result } from "./actions";
-import type { Category } from "@/lib/database.types";
+import type { PickerCategory } from "@/components/CategoryPicker";
 
 function Check({
   name,
@@ -46,7 +46,7 @@ export function AlertPrefs({
   emailEnabled: boolean;
   bulkLotsEnabled: boolean;
   bulkLotCategories: number[];
-  categories: Category[];
+  categories: PickerCategory[];
 }) {
   const [result, action] = useActionState<Result | null, FormData>(saveAlertPrefs, null);
   // Controlled so the category list can appear and disappear with the toggle.

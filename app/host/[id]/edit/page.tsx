@@ -29,7 +29,7 @@ export default async function EditSalePage({ params }: PageProps<"/host/[id]/edi
         .eq("id", id)
         .maybeSingle(),
       supabase.from("sale_categories").select("category_id").eq("sale_id", id),
-      supabase.from("categories").select("id, label").order("id"),
+      supabase.from("categories").select("id, label, color, parent_id, position").order("position"),
       supabase.from("sale_watchers").select("sale_id", { count: "exact", head: true }).eq("sale_id", id),
     ]);
 

@@ -52,7 +52,7 @@ export default async function AlertsPage() {
         .select("*")
         .eq("shopper_id", user.id)
         .order("created_at", { ascending: false }),
-      supabase.from("categories").select("*").order("id"),
+      supabase.from("categories").select("id, label, color, parent_id, position").order("position"),
       supabase
         .from("notification_prefs")
         .select("email_enabled, radius_miles, bulk_lots_enabled, bulk_lot_categories")

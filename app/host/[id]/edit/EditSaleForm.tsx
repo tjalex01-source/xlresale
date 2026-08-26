@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 
 import { AddressField, type PickedAddress } from "@/components/AddressField";
 import { Field, FormError, SubmitButton } from "@/components/form";
+import { CategoryPicker, type PickerCategory } from "@/components/CategoryPicker";
 import { updateSale, type EditState } from "./actions";
 
 export interface EditableSale {
@@ -30,7 +31,7 @@ export function EditSaleForm({
   watcherCount,
 }: {
   sale: EditableSale;
-  categories: { id: number; label: string }[];
+  categories: PickerCategory[];
   selectedCategoryIds: number[];
   watcherCount: number;
 }) {
@@ -140,22 +141,8 @@ export function EditSaleForm({
       {/* ---- categories ---- */}
       <fieldset>
         <legend className="text-sm font-semibold">What kind of stuff</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <label
-              key={c.id}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[10px] border border-hair bg-panel px-3.5 text-sm font-semibold has-checked:border-pink has-checked:bg-pink-50 has-checked:text-pink-ink"
-            >
-              <input
-                type="checkbox"
-                name="category_ids"
-                value={c.id}
-                defaultChecked={selectedCategoryIds.includes(c.id)}
-                className="size-4 accent-pink"
-              />
-              {c.label}
-            </label>
-          ))}
+        <div className="mt-2">
+          <CategoryPicker categories={categories} initial={selectedCategoryIds} />
         </div>
       </fieldset>
 
