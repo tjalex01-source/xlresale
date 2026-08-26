@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 
+import { createClient } from "@/lib/supabase/server";
+import { AppNav } from "@/components/AppNav";
+
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
@@ -42,13 +45,23 @@ export const viewport: Viewport = {
   width: "device-width",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // One auth read for the whole tree, so the nav knows whether to render at
+  // all. Every page under it is already dynamic for the same reason.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html
       lang="en"
       className={`${bricolage.variable} ${instrument.variable} ${spaceMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AppNav signedIn={Boolean(user)} />
+        {children}
+      </body>
     </html>
   );
 }
