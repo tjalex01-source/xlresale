@@ -1,0 +1,18 @@
+Space Mono is licensed under the SIL Open Font License, Version 1.1.
+
+Copyright (c) 2016, Colophon Foundry (https://www.colophon-foundry.org),
+with Reserved Font Name "Space Mono".
+
+The full licence text: https://openfontlicense.org/
+
+Kept in the repo rather than fetched from Google at render time, because
+opengraph-image.tsx needs the actual font bytes and a share card that silently
+loses its typeface when a third-party request fails is worse than 80KB here.
+Space Mono is already the app's face for every price and time (DESIGN.md →
+Type), so the card and the site agree.
+
+It lives under public/ rather than beside the route because Turbopack cannot
+fetch a file: URL — `fetch(new URL("./x.ttf", import.meta.url))`, which is the
+pattern the Next docs suggest, fails in dev with "not implemented... yet...".
+Serving it over HTTP is one mechanism that works in both dev and production,
+and it's the same one the card already uses for the mascot.

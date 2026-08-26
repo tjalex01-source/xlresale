@@ -4,17 +4,21 @@ import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
 import { Field, FormError, SubmitButton } from "@/components/form";
+import { FindPhotoField } from "@/components/FindPhotoField";
+import { ShareButton } from "@/components/ShareButton";
 import { formatMoney } from "@/lib/pricing";
+import { findPhotoUrl, findSummary, savedAmount } from "@/lib/finds";
 import { formatSaleDay } from "@/lib/sale-time";
 import { addFind, removeFind, setFindPublic, type Result } from "./actions";
 import type { Find } from "@/lib/database.types";
 
-function Row({ find, username }: { find: Find; username: string | null }) {
+function Row({ find, origin }: { find: Find; origin: string }) {
   const [pending, startTransition] = useTransition();
 
   const paid = find.price_paid;
   const worth = find.est_value;
-  const saved = paid !== null && worth !== null ? worth - paid : null;
+  const saved = savedAmount(find);
+  const url = `${origin}/f/${find.id}`;
 
   return (
     <li className="rounded-[16px] border border-hair bg-panel p-4">
@@ -23,12 +27,23 @@ function Row({ find, username }: { find: Find; username: string | null }) {
         <span className="font-mono text-[13px] text-muted">{formatSaleDay(find.found_on)}</span>
       </div>
 
+      {find.photo_path && (
+        // eslint-disable-next-line @next/next/no-img-element -- user upload, arbitrary dimensions
+        <img
+          src={findPhotoUrl(find.photo_path)}
+          alt=""
+          className="mt-3 aspect-square w-28 rounded-[12px] object-cover"
+        />
+      )}
+
       {(paid !== null || worth !== null) && (
         <p className="mt-2 font-mono text-sm">
           {paid !== null && <>paid {formatMoney(paid)}</>}
           {paid !== null && worth !== null && " · "}
           {worth !== null && <>worth {formatMoney(worth)}</>}
-          {saved !== null && saved > 0 && (
+          {/* savedAmount already returns null unless it's worth more than you
+              paid, so there's no > 0 test to repeat here. */}
+          {saved !== null && (
             <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-xs font-bold text-green-ink">
               +{formatMoney(saved)}
             </span>
@@ -48,13 +63,20 @@ function Row({ find, username }: { find: Find; username: string | null }) {
           {find.is_public ? "Public" : "Private"}
         </button>
 
-        {find.is_public && username && (
-          <Link
-            href={`/u/${username}`}
-            className="text-sm font-semibold text-muted underline underline-offset-4 hover:text-pink"
-          >
-            See it on your profile
-          </Link>
+        {/* Only a public find has a link worth sending — /f/[id] reads through
+            finds_public_read, so a private one is a 404 to everyone else. */}
+        {find.is_public ? (
+          <>
+            <ShareButton url={url} title={find.title} text={findSummary(find)} />
+            <Link
+              href={`/f/${find.id}`}
+              className="text-sm font-semibold text-muted underline underline-offset-4 hover:text-pink"
+            >
+              See the page
+            </Link>
+          </>
+        ) : (
+          <span className="text-sm text-muted">Make it public to share it.</span>
         )}
 
         <button
@@ -72,26 +94,46 @@ function Row({ find, username }: { find: Find; username: string | null }) {
 
 export function FindsManager({
   finds,
+  finderId,
   username,
   savedSales,
   today,
+  origin,
 }: {
   finds: Find[];
+  /** The signed-in user's id — the first segment of every upload path. */
+  finderId: string;
   username: string | null;
   /** Sales this shopper saved, offered as "where did you get it?" */
   savedSales: { id: string; title: string }[];
   /** Today's date as YYYY-MM-DD, computed on the server so it matches the DB. */
   today: string;
+  /** Canonical origin, so a copied link works off this device. */
+  origin: string;
 }) {
   const [result, action] = useActionState<Result | null, FormData>(addFind, null);
   const [title, setTitle] = useState("");
+
+  // The photo field holds a path, not an <input type=file>, so React's form
+  // reset doesn't clear it. Counting successful logs gives it something to
+  // watch — otherwise the next find starts out wearing the last one's photo.
+  //
+  // State rather than a ref: this is React's own "adjust state when a prop
+  // changes during render" pattern. A ref read during render is the thing that
+  // silently fails to re-render.
+  const [logged, setLogged] = useState(0);
+  const [seenResult, setSeenResult] = useState<Result | null>(null);
+  if (result !== seenResult) {
+    setSeenResult(result);
+    if (result?.ok) setLogged((n) => n + 1);
+  }
 
   return (
     <div>
       {finds.length > 0 && (
         <ul className="mb-8 space-y-3">
           {finds.map((find) => (
-            <Row key={find.id} find={find} username={username} />
+            <Row key={find.id} find={find} origin={origin} />
           ))}
         </ul>
       )}
@@ -106,6 +148,15 @@ export function FindsManager({
           maxLength={120}
           invalid={result?.ok === false}
         />
+
+        {/* The photo is what makes a shared find look like anything, so it sits
+            second rather than at the bottom with the optional extras. */}
+        <div>
+          <p className="text-sm font-semibold">Photo</p>
+          <div className="mt-1.5">
+            <FindPhotoField finderId={finderId} resetKey={logged} />
+          </div>
+        </div>
 
         <div className="flex flex-wrap gap-4">
           <div className="min-w-32 flex-1">

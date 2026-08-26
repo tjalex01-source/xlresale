@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
 import { formatMoney } from "@/lib/pricing";
+import { siteUrl } from "@/lib/finds";
 import { FindsManager } from "./FindsManager";
 
 export const metadata: Metadata = { title: "Your finds — XLResale" };
@@ -89,9 +90,11 @@ export default async function FindsPage() {
         <section className="mt-8">
           <FindsManager
             finds={finds ?? []}
+            finderId={user.id}
             username={profile?.username ?? null}
             savedSales={savedSales}
             today={today}
+            origin={siteUrl()}
           />
         </section>
       </main>

@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
 import { EmptyState } from "@/components/EmptyState";
+import { findPhotoUrl, formatDollars, savedAmount } from "@/lib/finds";
 
 export const revalidate = 60;
 
@@ -46,7 +47,7 @@ export default async function ProfilePage({ params }: PageProps<"/u/[username]">
   const supabase = await createClient();
   const { data: finds } = await supabase
     .from("finds")
-    .select("id, title, note, price_paid, est_value, found_on")
+    .select("id, title, note, price_paid, est_value, found_on, photo_path")
     .eq("finder_id", profile.id)
     .eq("is_public", true)
     .order("found_on", { ascending: false })
@@ -84,24 +85,43 @@ export default async function ProfilePage({ params }: PageProps<"/u/[username]">
               {finds.map((find) => {
                 const paid = find.price_paid;
                 const worth = find.est_value;
-                const saved = paid != null && worth != null ? worth - paid : null;
+                const saved = savedAmount(find);
                 return (
-                  <li key={find.id} className="rounded-[16px] bg-panel p-5 shadow-card">
-                    <p className="font-display text-lg font-bold leading-snug">{find.title}</p>
-                    {find.note && <p className="mt-1.5 text-sm text-ink-soft">{find.note}</p>}
-                    <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                      {paid != null && (
-                        <span className="font-mono text-lg font-bold">${paid}</span>
+                  <li key={find.id} className="overflow-hidden rounded-[16px] bg-panel shadow-card">
+                    {/* The whole card is the link. This page is where a visitor
+                        picks one find to send on, so every card is a door to
+                        the share page rather than a dead end. */}
+                    <Link href={`/f/${find.id}`} className="block hover:opacity-95">
+                      {find.photo_path && (
+                        // eslint-disable-next-line @next/next/no-img-element -- user upload, arbitrary dimensions
+                        <img
+                          src={findPhotoUrl(find.photo_path)}
+                          alt=""
+                          className="aspect-[4/3] w-full object-cover"
+                        />
                       )}
-                      {worth != null && (
-                        <span className="font-mono text-sm text-muted line-through">${worth}</span>
-                      )}
-                      {saved != null && saved > 0 && (
-                        <span className="ml-auto rounded-full bg-green-50 px-3 py-1 font-mono text-xs font-bold text-green-ink">
-                          saved ${saved}
-                        </span>
-                      )}
-                    </div>
+                      <div className="p-5">
+                        <p className="font-display text-lg font-bold leading-snug">{find.title}</p>
+                        {find.note && <p className="mt-1.5 text-sm text-ink-soft">{find.note}</p>}
+                        <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                          {paid != null && (
+                            <span className="font-mono text-lg font-bold">
+                              {formatDollars(paid)}
+                            </span>
+                          )}
+                          {worth != null && (
+                            <span className="font-mono text-sm text-muted line-through">
+                              {formatDollars(worth)}
+                            </span>
+                          )}
+                          {saved != null && (
+                            <span className="ml-auto rounded-full bg-green-50 px-3 py-1 font-mono text-xs font-bold text-green-ink">
+                              {formatDollars(saved)} up
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
                   </li>
                 );
               })}

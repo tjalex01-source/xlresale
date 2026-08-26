@@ -19,21 +19,22 @@ Done in that pass: a single navigation bar, a category tree with subcategories o
 sides, finger-drag and swipe on the route planner, the install prompt reworded and moved,
 **the role chooser** (§9), and **the copy-and-visual pass** (§10).
 
-**Not done, and next up:** the UX pass is finished. §8 is the priority list — the top of
-it is finds sharing, which the brief calls the growth loop, and the free-pile map filter.
-Stripe stays last at T.J.'s instruction.
+Then **finds sharing** — the growth loop (§11).
+
+**Not done, and next up:** §8 is the priority list. The top of it is now the free-pile map
+filter, then the seller v1.5 backlog. Stripe stays last at T.J.'s instruction.
 
 ---
 
 ## 2. What is built
 
-**23 pages** · **3 API routes** · **14 migrations** · **51 commits**
+**24 pages** · **3 API routes** · **15 migrations** · **52 commits**
 
 | Area | State |
 |---|---|
 | Accounts | Email+password, verification, reset, Turnstile bot check, public `/u/username`, **role chooser** |
 | Host | Create, **edit/reschedule**, Go Live lifecycle, featured items, bulk discounts, free pile, photos, **self-serve takedown** |
-| Shopper | Map with status pins + day filter, sale pages with realtime, save, dashboard, **route planner**, wishlist alerts, finds tracker |
+| Shopper | Map with status pins + day filter, sale pages with realtime, save, dashboard, **route planner**, wishlist alerts, finds tracker + **public share pages** |
 | Alerts | Queued by DB trigger, delivered by email (Resend) + web push, three kinds (match / rescheduled / moved) |
 | PWA | Manifest, icons, service worker, install + notification opt-in |
 | Admin | `/admin` overview, accounts (suspend/delete), sales (comp/hide/delete), audit trail |
@@ -42,6 +43,9 @@ Stripe stays last at T.J.'s instruction.
 Routes: `/ /account /account/delete /account/password /admin /admin/sales /admin/users
 /forgot-password /host /host/[id] /host/[id]/edit /host/new /login /map /privacy /route
 /s/[id] /shop /shop/alerts /shop/finds /signup /u/[username] /welcome`
+
+Plus `/f/[id]` — a public find, with a generated Open Graph card at
+`/f/[id]/opengraph-image`.
 
 APIs: `/api/cron/send-alerts` `/api/push/subscribe` `/api/route-matrix`
 
@@ -214,16 +218,14 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
    nobody qualified has reviewed it.
 
 **Buyer gaps**
-3. **Finds sharing** — logging works, sharing doesn't. No photo upload, no Open Graph
-   share pages, no Web Share API. The brief calls this the growth loop.
-5. Free-pile map filter ("sales with free stuff") — the badge exists, the filter doesn't.
+3. Free-pile map filter ("sales with free stuff") — the badge exists, the filter doesn't.
 
 **Seller v1.5 backlog** (all specified in CLAUDE.md §6)
-6. Weather nudge and wash-out credit — both unblocked now that editing exists.
-7. Tap-to-total calculator (brief says build last).
-8. Buyer↔seller "is this still available?" ping — needs report/block first.
-9. Incoming-shopper ETAs.
-10. End-of-sale handoff and the $5 bulk-lot blast.
+4. Weather nudge and wash-out credit — both unblocked now that editing exists.
+5. Tap-to-total calculator (brief says build last).
+6. Buyer↔seller "is this still available?" ping — needs report/block first.
+7. Incoming-shopper ETAs.
+8. End-of-sale handoff and the $5 bulk-lot blast.
 
 **Unverified by a human — needs a phone, ten minutes**
 - The Turnstile submit-hold fix (sign out, sign in at normal typing speed)
@@ -334,7 +336,68 @@ fetch, and neither was worth it for a card you see one at a time.
 
 ---
 
-## 11. How this session worked
+## 11. Finds sharing — the growth loop, as built
+
+`schema-additions-finds-sharing.sql` · `lib/finds.ts` · `app/f/[id]/` ·
+`components/FindPhotoField.tsx` · `components/ShareButton.tsx`
+
+A find gets a photo, a public page at `/f/[id]`, a generated Open Graph card, and a Share
+button. The brief's line is "every shared find is a free ad", so the share page is written
+for the stranger who opens the link, not for the finder: the bargain, then who found it,
+then one line of pitch and a door.
+
+**The bucket existed only as a sentence.** `finds.photo_path` has been in the schema since
+the second migration, pointing at a bucket that `schema-additions-auth-profiles.sql` §7
+left as a dashboard step nobody clicked — so it was null on every row that could ever be
+written. It's created in SQL now, with the same owner-prefix policies as `sale-photos`.
+
+**Photos never go through the Server Action.** A Server Action body is capped at 1MB and a
+phone photo isn't, so the browser uploads to Storage and posts back only the path. The
+action re-checks that path (`<own-uid>/<uuid>.<ext>`, no second slash) before writing it to
+a row, because the path arrives as a plain form field and every reader downstream trusts
+it. The trade: pick a photo and abandon the page, and the object is orphaned. Choosing a
+different photo cleans up the last one, so it's bounded to abandoned drafts.
+
+**Private means private.** `/f/[id]` reads through `finds_public_read`, so a private find
+is a 404 and its card renders the generic XLResale one with no title in it. A public find
+by a *private profile* renders unattributed — the find was made public, the person wasn't.
+
+**The Open Graph card fought back, and the fixes are worth knowing:**
+- `fetch(new URL("./x.ttf", import.meta.url))` is the pattern the Next docs give for local
+  assets in an OG route. Turbopack answers a `file:` URL with "not implemented... yet...".
+  Both fonts and the mascot are therefore served from `public/` and fetched over HTTP.
+- **A photo the renderer can't decode is not catchable.** It throws while the response is
+  being piped, so a try/catch around the render — even one that awaits the bytes — still
+  lets the request 500, and a 500 means the link previews as nothing. The card now fetches
+  the photo itself and sniffs its magic bytes, and anything that isn't PNG/JPEG/GIF/WebP
+  becomes the mascot layout. This matters because **the bucket accepts HEIC, which is what
+  an iPhone uploads, and HEIC is exactly what the renderer can't read.**
+- The asset cache hands out a **copy** of each buffer, never the cached one. A warm
+  instance serves many requests from it, and a detached ArrayBuffer surfaces as
+  "unsupported image format" on request two, which looks nothing like a caching bug.
+
+**Three layers stop an unusable photo**, because each catches what the others can't: the
+uploader refuses a file the browser can't draw, the card sniffs bytes and falls back to
+Nub, and the share page's `<img>` is the only place left that can show nothing.
+
+**The Share button has a third path.** Native sheet, then clipboard, then — when the
+clipboard is denied, which really happens — the URL appears in a selected readonly input.
+Before that it silently did nothing, on the one button whose entire job is handing someone
+a link.
+
+**Verified** with 24 checks against the running app: upload, the real Server Action, a
+photo path under someone else's id, a traversal path, the share page as a signed-out
+stranger, every Open Graph tag, the card as real PNG bytes, a private find 404ing, the
+profile linking through, and a HEIC photo still producing a card. Both card layouts were
+rendered and looked at.
+
+**Left undone:** a photo that decodes in the uploader's browser but not in the renderer
+(16-bit PNG, CMYK JPEG) still 500s the card. The share page itself is fine, so the cost is
+a missing preview image, and the byte sniffing covers the case that actually happens.
+
+---
+
+## 12. How this session worked
 
 T.J. is a screenwriter, not a developer, and does not use a terminal. Run every command
 yourself and give dashboard click-paths for anything that must happen in a GUI.
