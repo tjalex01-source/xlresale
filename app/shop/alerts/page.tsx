@@ -140,10 +140,6 @@ export default async function AlertsPage() {
           />
         </Card>
 
-        <Card title="On your phone">
-          <InstallAndNotify />
-        </Card>
-
         <Card title="How we reach you">
           <AlertPrefs
             emailEnabled={prefs?.email_enabled ?? true}
@@ -151,6 +147,10 @@ export default async function AlertsPage() {
             bulkLotCategories={prefs?.bulk_lot_categories ?? []}
             categories={categories ?? []}
           />
+        </Card>
+
+        <Card title="On your phone">
+          <InstallAndNotify interestCount={wishlists?.length ?? 0} />
         </Card>
       </main>
     </>

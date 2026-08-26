@@ -59,7 +59,7 @@ const readPermission = (): NotificationPermission | "unsupported" =>
     ? Notification.permission
     : "unsupported";
 
-export function InstallAndNotify() {
+export function InstallAndNotify({ interestCount = 0 }: { interestCount?: number }) {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [justInstalled, setJustInstalled] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -178,10 +178,20 @@ export function InstallAndNotify() {
 
   return (
     <div className="rounded-[16px] border border-hair bg-canvas p-4">
-      <p className="font-display text-lg font-bold">Put XLResale on your phone</p>
+      <p className="font-display text-lg font-bold">
+        {interestCount > 0
+          ? "Get told the moment one turns up"
+          : "Put XLResale on your phone"}
+      </p>
       <p className="mt-1 text-sm text-ink-soft">
-        It opens like an app, straight to your saved sales — and it&rsquo;s how you get alerts on
-        your phone.
+        {interestCount > 0 ? (
+          <>
+            Add XLResale to your home screen and we&rsquo;ll buzz you when a sale near you
+            matches {interestCount === 1 ? "it" : "any of them"}.
+          </>
+        ) : (
+          <>It opens like an app, straight to your saved sales.</>
+        )}
       </p>
 
       {installed ? (

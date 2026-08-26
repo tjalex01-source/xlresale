@@ -14,14 +14,9 @@ import {
   type LegTimes,
   type RouteStop,
 } from "@/lib/route";
+import { StopList } from "./StopList";
 import { saveRoute } from "./actions";
 import type { UpcomingSale } from "@/lib/database.types";
-
-const VERDICT_STYLE = {
-  ok: { chip: "bg-green-50 text-green-ink", mark: "✓" },
-  tight: { chip: "bg-tangerine-50 text-tangerine-ink", mark: "◔" },
-  miss: { chip: "bg-pink-50 text-pink-ink", mark: "✕" },
-} as const;
 
 const toStop = (s: UpcomingSale): RouteStop => ({
   id: s.id,
@@ -128,15 +123,19 @@ export function RoutePlanner({
     }
   }, [home, chosen, stopSetKey]);
 
-  const move = (index: number, delta: number) => {
+  /** Lift out of `from` and drop at `to`, which is what a drag does; the
+   *  arrows are just the special case of moving one place. */
+  const reorder = (from: number, to: number) => {
     setOrder((current) => {
+      if (to < 0 || to >= current.length || from === to) return current;
       const next = [...current];
-      const target = index + delta;
-      if (target < 0 || target >= next.length) return current;
-      [next[index], next[target]] = [next[target], next[index]];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
       return next;
     });
   };
+
+  const removeStop = (id: string) => setOrder((c) => c.filter((x) => x !== id));
 
   if (!home) {
     return (
@@ -202,78 +201,13 @@ export function RoutePlanner({
           </p>
         ) : (
           <>
-            <ol className="mt-3 space-y-2">
-              {schedule?.stops.map((entry, index) => {
-                const style = VERDICT_STYLE[entry.verdict.kind];
-                return (
-                  <li
-                    key={entry.stop.id}
-                    className="flex items-start gap-3 rounded-[16px] border border-hair bg-panel p-4"
-                  >
-                    <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ink font-mono text-xs font-bold text-canvas">
-                      {index + 1}
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/s/${entry.stop.id}`}
-                        className="font-display text-lg font-bold leading-tight hover:text-pink"
-                      >
-                        {entry.stop.title}
-                      </Link>
-
-                      <p className="mt-1 font-mono text-[13px] text-ink-soft">
-                        {Math.round(entry.driveMinutes)} min drive · arrive{" "}
-                        {minutesToTime(entry.arriveAt)} · closes{" "}
-                        {minutesToTime(timeToMinutes(entry.stop.closes_at))}
-                      </p>
-
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 font-mono text-xs font-bold ${style.chip}`}
-                        >
-                          {style.mark} {entry.verdict.label}
-                        </span>
-                        {entry.waitedMinutes > 0 && (
-                          <span className="rounded-full bg-pink-50 px-2.5 py-0.5 font-mono text-xs font-bold text-pink-ink">
-                            wait {Math.round(entry.waitedMinutes)} min for it to open
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 flex-col gap-1">
-                      <button
-                        type="button"
-                        onClick={() => move(index, -1)}
-                        disabled={index === 0}
-                        aria-label={`Move ${entry.stop.title} earlier`}
-                        className="grid size-9 place-items-center rounded-[8px] border border-hair hover:border-pink hover:text-pink disabled:opacity-30"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => move(index, 1)}
-                        disabled={index === chosen.length - 1}
-                        aria-label={`Move ${entry.stop.title} later`}
-                        className="grid size-9 place-items-center rounded-[8px] border border-hair hover:border-pink hover:text-pink disabled:opacity-30"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setOrder((c) => c.filter((id) => id !== entry.stop.id))}
-                        aria-label={`Remove ${entry.stop.title}`}
-                        className="grid size-9 place-items-center rounded-[8px] text-muted hover:text-pink"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+            <div className="mt-3">
+              <StopList
+                stops={schedule?.stops ?? []}
+                onReorder={reorder}
+                onRemove={removeStop}
+              />
+            </div>
 
             {schedule && (
               <div className="mt-4 rounded-[16px] bg-panel p-4">
