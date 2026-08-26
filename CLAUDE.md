@@ -1,3 +1,10 @@
+> ## START HERE
+> **Read [`HANDOFF.md`](HANDOFF.md) first.** It is the current state of the build:
+> what exists, the decisions that override this brief, the traps that have already
+> bitten, and what to do next. This file stays authoritative on *what* the product is
+> and *why* — but §4 below was written before any code existed, and HANDOFF.md is the
+> record of reality.
+
 # XLResale — Build Brief & `CLAUDE.md`
 
 > **What this is:** the operating brief for building XLResale. Read it fully before
@@ -84,17 +91,37 @@ that helps real people, not a scraper farm.
 
 ---
 
-## 4. Current state — what already exists
+## 4. Current state — see HANDOFF.md
 
-- ✅ **Database schema (`schema.sql`)** — complete and ready to run in the Supabase SQL
-  Editor. Includes: `profiles`, `categories`, `sales`, `sale_categories`,
-  `saved_routes`, `sale_watchers`, `notification_prefs`; the `sale_status` enum; full
-  RLS; the `sales_near()` PostGIS radius RPC; a `pg_cron` auto-close job; and Realtime
-  enabled on `sales`. Seeds the category list.
-- ✅ **Design prototype (`reference/design-reference.html`)** — shows the full visual system, both
-  the shopper and host views, the four live-pin states, and the working time-aware route
-  planner (drag-to-reorder with ETA-vs-closing recalculation). **Reference only.**
-- ⬜ Everything else (the app itself) — to build.
+**This section is superseded.** It was written before any code existed and said
+"everything else, to build". Most of the v1 and v1.5 scope is now built and deployed.
+
+**[`HANDOFF.md`](HANDOFF.md) is the accurate record** — what exists, what's left, the
+decisions that override this brief, and the traps already hit. Read it first.
+
+The design prototype in `reference/` is still reference only and still worth reading for
+the visual system.
+
+**Migrations run in this order** (all already applied to the live database):
+
+```
+schema.sql
+schema-additions-auth-profiles.sql
+schema-additions-seller.sql
+schema-additions-plans.sql
+schema-additions-buyer.sql
+schema-additions-admin.sql
+schema-additions-notify.sql
+schema-additions-security.sql
+schema-additions-address-policy.sql
+schema-additions-takedown.sql
+schema-additions-edit.sql
+schema-additions-account.sql
+schema-additions-categories.sql
+```
+
+Also in the repo: `docs/ADDRESS-POLICY.md` — the host-address precision decision, which
+is enforced in the database and should not be loosened without re-reading it.
 
 ---
 
