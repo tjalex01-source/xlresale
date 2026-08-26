@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { validateUsername, usernameErrorMessage } from "@/lib/username";
 import { MAX_RADIUS_MILES } from "@/lib/prefs";
+import { isFocus, landingFor, type ProfileFocus } from "@/lib/focus";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -96,6 +97,44 @@ export async function saveProfile(
 
   revalidatePath("/account");
   return { ok: true, message: "Saved." };
+}
+
+/* ---------------------------------------------------------------------------
+   What brings you here — the first-run chooser (lib/focus.ts).
+   --------------------------------------------------------------------------- */
+
+/** Writes the answer. Returns it, or null if there wasn't a usable one. */
+async function setFocus(formData: FormData): Promise<ProfileFocus | null> {
+  const { supabase, user } = await requireUser();
+  if (!user) return null;
+
+  const value = formData.get("focus");
+  // A Server Action is its own entry point, so this is the real validation
+  // rather than a formality — the three buttons can't produce anything else.
+  if (!isFocus(value)) return null;
+
+  const { error } = await supabase.from("profiles").update({ focus: value }).eq("id", user.id);
+  if (error) return null;
+
+  revalidatePath("/account");
+  return value;
+}
+
+/**
+ * From `/welcome`: answer, then go to the home that answer implies.
+ *
+ * A failed write falls back to `/account` rather than looping on the chooser —
+ * an unanswered question is a much smaller problem than a page somebody can't
+ * get out of, and the same control is on the account page.
+ */
+export async function chooseFocus(formData: FormData) {
+  const value = await setFocus(formData);
+  redirect(value ? landingFor(value) : "/account");
+}
+
+/** From the account page: change it and stay put. The page reorders under you. */
+export async function changeFocus(formData: FormData) {
+  await setFocus(formData);
 }
 
 /**

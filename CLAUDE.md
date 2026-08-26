@@ -118,6 +118,7 @@ schema-additions-takedown.sql
 schema-additions-edit.sql
 schema-additions-account.sql
 schema-additions-categories.sql
+schema-additions-focus.sql
 ```
 
 Also in the repo: `docs/ADDRESS-POLICY.md` — the host-address precision decision, which

@@ -29,7 +29,7 @@ const TABS = [
 ] as const;
 
 /** Pages that are their own front door and shouldn't carry app chrome. */
-const BARE = ["/", "/login", "/signup", "/forgot-password", "/privacy"];
+const BARE = ["/", "/login", "/signup", "/forgot-password", "/privacy", "/welcome"];
 
 export function AppNav({ signedIn }: { signedIn: boolean }) {
   const pathname = usePathname();

@@ -227,6 +227,7 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          focus: Database["public"]["Enums"]["profile_focus"] | null
           home_address: string | null
           home_point: unknown
           id: string
@@ -239,6 +240,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          focus?: Database["public"]["Enums"]["profile_focus"] | null
           home_address?: string | null
           home_point?: unknown
           id: string
@@ -251,6 +253,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          focus?: Database["public"]["Enums"]["profile_focus"] | null
           home_address?: string | null
           home_point?: unknown
           id?: string
@@ -947,6 +950,7 @@ export type Database = {
       }
     }
     Enums: {
+      profile_focus: "shopping" | "selling" | "both"
       sale_status: "scheduled" | "live" | "winding_down" | "closed"
     }
     CompositeTypes: {
@@ -1075,6 +1079,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      profile_focus: ["shopping", "selling", "both"],
       sale_status: ["scheduled", "live", "winding_down", "closed"],
     },
   },

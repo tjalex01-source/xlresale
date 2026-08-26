@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeRedirect } from "@/lib/safe-redirect";
+import { DEFAULT_LANDING, landingFor } from "@/lib/focus";
 
 export type LoginState = { status: "idle" } | { status: "error"; message: string };
 
@@ -11,15 +13,19 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const captchaToken = String(formData.get("captcha_token") ?? "");
-  const rawNext = String(formData.get("next") ?? "/account");
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
+  const rawNext = String(formData.get("next") ?? DEFAULT_LANDING);
+
+  // Only an explicit destination survives. The form sends DEFAULT_LANDING when
+  // nobody asked for anywhere, and that's the case the sign-in landing below
+  // gets to answer — someone who clicked "List your sale" keeps their target.
+  const requested = rawNext === DEFAULT_LANDING ? null : rawNext;
 
   if (!email || !password) {
     return { status: "error", message: "Enter your email and password." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
     options: { captchaToken },
@@ -41,7 +47,23 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
     return { status: "error", message: "That email and password don't match." };
   }
 
-  redirect(next);
+  // Where a plain sign-in goes is now the person's own answer to "what brings
+  // you here?" — the map for a shopper, the seller dashboard for a host, and
+  // the chooser itself for anyone who has never been asked. See lib/focus.ts.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("focus")
+    .eq("id", data.user.id)
+    .single();
+
+  // Resolved against our own origin rather than string-tested. `next` arrives
+  // from a query parameter, and redirect() takes a bare path straight into the
+  // Location header: `/\evil.com` passes a startsWith("/") check and then the
+  // browser resolves it to https://evil.com. safe-redirect.ts documents the
+  // whole family. An open redirect on the sign-in page is the worst place for
+  // one — the visitor has just proved the site is genuine by logging into it.
+  const origin = (await headers()).get("origin") ?? "https://xlresale.com";
+  redirect(safeRedirect(requested, origin, landingFor(profile?.focus ?? null)));
 }
 
 export type ResetState =

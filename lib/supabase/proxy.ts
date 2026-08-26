@@ -11,7 +11,7 @@ import { safeRedirect } from "@/lib/safe-redirect";
  * putting a login wall in front of it would kill the growth loop. It handles
  * signed-out visitors itself by offering "Sign in to save".
  */
-const PROTECTED = ["/account", "/host", "/shop", "/route", "/admin"];
+const PROTECTED = ["/account", "/host", "/shop", "/route", "/admin", "/welcome"];
 
 /** Paths that make no sense once you're signed in. */
 const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"];
