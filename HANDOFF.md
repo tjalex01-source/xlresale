@@ -168,10 +168,17 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
 - **Role chooser** — three buttons on first sign-in, then the account page reorders.
   ⬜ Not built. Caveat agreed: "Both" will win by default, so it must mean *buyer-first
   with selling visible*, never "show all eight cards". The choice reorders; it never hides.
-- **Handle up front** — T.J. wanted it for both roles. Counter-argument offered and **not
-  resolved**: "username taken" at signup is a classic abandonment point and a buyer who
-  never posts a public find never needs one. Suggestion was display name up front, unique
-  handle deferred to first public action. Signup still collects a username. **Open.**
+- **Handle up front** — T.J. wants it for both roles. Signup still collects a username.
+  **Deliberately left open, both sides recorded:**
+  - *Against:* "username taken" at signup is a classic abandonment point, and a shopper
+    who only wants alerts is being asked to invent a public identity before they've seen
+    a single sale. Alternative: display name up front, unique handle deferred to the
+    first public action.
+  - *For (T.J.):* collisions only start happening at a scale where the app is popular
+    enough that nobody abandons over one. Which is right — at a few hundred users the
+    "taken" path essentially never fires.
+  - The residual concern is the *ask*, not the collision, which makes it partly a copy
+    problem. Revisit when a real stranger has tried the signup, not before.
 - **Map prominent** — argued it should *be* the buyer home rather than a button. Currently
   the Map tab is leftmost in the nav, which is one tap from everywhere. Landing after
   sign-in is still `/account`; changing it is tied up with the role chooser.
