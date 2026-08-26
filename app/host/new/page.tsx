@@ -34,9 +34,9 @@ export default async function NewSalePage() {
         <h1 className="font-display text-[clamp(2rem,4vw,2.75rem)] font-extrabold leading-none tracking-[-0.02em]">
           List your sale
         </h1>
-        <p className="mt-3 text-lg text-ink-soft">
-          Takes a couple of minutes. You can change any of it later.
-        </p>
+        {/* Kept, and shortened: this one earns its place. It's the sentence
+            that gets somebody to start a form. */}
+        <p className="mt-3 text-lg text-ink-soft">Two minutes, and you can change it later.</p>
 
         <div className="mt-8">
           <SaleForm categories={categories ?? []} />

@@ -63,7 +63,7 @@ export default async function MapPage() {
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-3 text-sm text-ink-soft">
+        <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm text-ink-soft">
           <span className="inline-flex items-center gap-2">
             <span className="size-3 rounded-full bg-green" aria-hidden /> Open now
           </span>

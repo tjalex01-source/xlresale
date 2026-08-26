@@ -78,11 +78,11 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const order = CARD_ORDER[focus ?? "both"];
 
   const cards: Record<CardKey, React.ReactNode> = {
+    // Most of the prose that used to sit under these headings just named the
+    // buttons underneath it. Where a card says something a button can't — what
+    // stays private, what a number means — the line survived.
     shopping: (
       <Card title="Shopping">
-        <p className="mt-1 text-sm text-ink-soft">
-          Sales you&rsquo;ve saved, what&rsquo;s near you this week, your alerts, and your finds.
-        </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/shop"
@@ -109,12 +109,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     sales: (
       <Card title="Your sales">
         {saleCount && saleCount > 0 ? (
-          <p className="mt-2 text-sm text-ink-soft">
-            You have{" "}
-            <span className="font-mono text-ink">
-              {saleCount} {saleCount === 1 ? "sale" : "sales"}
-            </span>
-            . Open the dashboard to go live, drop prices, or mark things sold.
+          <p className="mt-2 font-mono text-sm text-ink-soft">
+            {saleCount} {saleCount === 1 ? "sale" : "sales"}
           </p>
         ) : (
           <p className="mt-2 text-sm text-ink-soft">You haven&rsquo;t listed a sale yet.</p>
@@ -156,8 +152,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     home: (
       <Card title="Where you shop from">
         <p className="mt-1 text-sm text-ink-soft">
-          The centre of &ldquo;near me&rdquo; and where your route starts. Kept private &mdash;
-          it never appears on your public profile.
+          Where &ldquo;near me&rdquo; is measured from. Never shown publicly.
         </p>
         <HomeForm
           currentAddress={profile?.home_address ?? null}
@@ -169,10 +164,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     focus: (
       <Card title="What brings you here">
         <p className="mt-1 text-sm text-ink-soft">
-          Sets what this page shows first, and where signing in drops you.
           {focus
-            ? ""
-            : " You haven't picked yet, so it's showing you the shopping side."}
+            ? "Sets what this page shows first, and where signing in lands."
+            : "You haven't picked yet, so this page is showing you the shopping side."}
         </p>
         <FocusChooser action={changeFocus} current={focus} variant="compact" />
       </Card>
@@ -180,7 +174,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
     password: (
       <Card title="Password">
-        <p className="mt-1 text-sm text-ink-soft">Change the password you sign in with.</p>
         <Link
           href="/account/password"
           className="mt-4 inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
@@ -192,9 +185,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
     data: (
       <Card title="Your data">
-        <p className="mt-1 text-sm text-ink-soft">
-          What we collect and why, and how to remove it.
-        </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/privacy"
@@ -246,9 +236,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             be a small daily annoyance for the one person who has it. */}
         {isAdmin && (
           <Card title="Admin">
-            <p className="mt-1 text-sm text-ink-soft">
-              Accounts, sales, and the record of what&rsquo;s been actioned.
-            </p>
             <Link
               href="/admin"
               className="mt-4 inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"

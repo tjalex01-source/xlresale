@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 
 import { createClient } from "@/lib/supabase/client";
+import { EmptyState } from "@/components/EmptyState";
 import { tagPinDataUri } from "@/lib/map-pin";
 import { SALE_STATUS_META } from "@/lib/sale-status";
 import { formatHours, formatMiles, formatSaleDay, shouldShowStatus } from "@/lib/sale-time";
@@ -336,49 +337,56 @@ export function MapView({
         )
       )}
 
+      {/* An empty map is the first thing a lot of people will ever see of
+          XLResale, and it used to be a grey sentence. Nub takes the sting out
+          of it so the words can just say what to do next. */}
       {sales.length === 0 && status === "ready" && (
-        <div className="mt-4 rounded-[16px] border border-hair bg-panel px-4 py-5 text-sm">
+        <>
           {hasHome ? (
-            <p className="text-ink-soft">
-              Nothing listed near you in the next week. Widen your radius on your{" "}
-              <Link href="/account" className="font-semibold text-ink underline underline-offset-4">
-                account page
-              </Link>
-              .
-            </p>
-          ) : (
-            <>
-              <p className="text-ink-soft">
-                {signedIn
-                  ? "Set a home address on your account, or use your current location just for now."
-                  : "Use your current location to see what's nearby."}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={locate}
-                  disabled={locating}
-                  className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90 disabled:opacity-60"
+            <EmptyState
+              title="Nothing near you this week"
+              action={
+                <Link
+                  href="/account"
+                  className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
                 >
-                  {locating ? "Finding you…" : "Use my location"}
-                </button>
-                {signedIn && (
-                  <Link
-                    href="/account"
-                    className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+                  Widen your radius
+                </Link>
+              }
+            >
+              Saturday fills up fast &mdash; try again closer to the weekend.
+            </EmptyState>
+          ) : (
+            <EmptyState
+              title="Nub doesn’t know where you are"
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={locate}
+                    disabled={locating}
+                    className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90 disabled:opacity-60"
                   >
-                    Set a home address
-                  </Link>
-                )}
-              </div>
-              {locateError && (
-                <p className="mt-3 text-sm text-pink-ink" role="alert">
-                  {locateError}
-                </p>
-              )}
-            </>
+                    {locating ? "Finding you…" : "Use my location"}
+                  </button>
+                  {signedIn && (
+                    <Link
+                      href="/account"
+                      className="inline-flex min-h-11 items-center rounded-[10px] border border-hair px-4 text-sm font-semibold hover:border-pink hover:text-pink"
+                    >
+                      Set a home address
+                    </Link>
+                  )}
+                </div>
+              }
+            />
           )}
-        </div>
+          {locateError && (
+            <p className="mt-3 text-center text-sm text-pink-ink" role="alert">
+              {locateError}
+            </p>
+          )}
+        </>
       )}
     </div>
   );

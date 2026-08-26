@@ -108,9 +108,12 @@ export function Hero({ liveCount }: { liveCount: number }) {
             is <span className="text-pink">open right now.</span>
           </h1>
 
+          {/* One line, per DESIGN.md → Hero. It was two sentences, and the
+              first was about the competition rather than about you. The
+              headline already makes the live-status promise, so this one
+              carries the other half — the routing — instead of echoing it. */}
           <p className="mt-[18px] max-w-[520px] text-[clamp(1.05rem,1.6vw,1.3rem)] leading-[1.5] text-ink-soft">
-            Every other app dumps unverified pins on a map. We show you which sales are
-            actually open &mdash; and build a route that reaches them before they close.
+            Live pins from real hosts, and a route that beats every closing time.
           </p>
 
           <div className="mt-[30px] flex flex-wrap gap-3">

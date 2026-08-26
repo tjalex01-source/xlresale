@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
 import { SaleCard } from "@/components/SaleCard";
 import { EmptyState } from "@/components/EmptyState";
+import { categoriesBySale } from "@/lib/sale-categories";
 import { isPast } from "@/lib/sale-time";
 import type { SaleStatus } from "@/lib/database.types";
 
@@ -90,6 +91,13 @@ export default async function ShopPage() {
 
   const hasHome = Boolean(profile?.home_address);
 
+  // What's at each sale, in its own colour — the thing a shopper is actually
+  // scanning this list for, and quicker to read than any sentence about it.
+  const categories = await categoriesBySale(supabase, [
+    ...savedSales.map((s) => s.id),
+    ...toBrowse.map((s) => s.id),
+  ]);
+
   return (
     <>
       <header className="mx-auto flex w-full max-w-2xl items-center gap-4 px-6 py-6">
@@ -102,12 +110,11 @@ export default async function ShopPage() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl px-6 pb-24">
+        {/* The subhead here listed the three sections directly below it. The
+            sections say it better, so it's gone. */}
         <h1 className="font-display text-[clamp(2rem,4vw,2.75rem)] font-extrabold leading-none tracking-[-0.02em]">
           Shopping
         </h1>
-        <p className="mt-3 text-ink-soft">
-          Sales you&rsquo;ve saved, what&rsquo;s coming up near you, and what you&rsquo;re hunting for.
-        </p>
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Link
@@ -146,30 +153,23 @@ export default async function ShopPage() {
 
         {!hasHome && (
           <p className="mt-6 rounded-[14px] bg-tangerine-50 px-4 py-3 text-sm text-tangerine-ink">
-            Set where you shop from and how far you&rsquo;ll drive, and this page fills up.{" "}
             <Link href="/account" className="font-bold underline underline-offset-4">
-              Set your location
-            </Link>
+              Set where you shop from
+            </Link>{" "}
+            and this page fills up.
           </p>
         )}
 
-        <Section
-          title="Saved"
-          hint={
-            savedUpcoming.length > 0
-              ? "The host can see how many people have saved their sale — it's what tells them not to pack up early."
-              : undefined
-          }
-        >
+        <Section title="Saved">
           {savedUpcoming.length > 0 ? (
             <ul className="space-y-3">
               {savedUpcoming.map((sale) => (
-                <SaleCard key={sale.id} sale={sale} />
+                <SaleCard key={sale.id} sale={sale} categories={categories.get(sale.id)} />
               ))}
             </ul>
           ) : (
             <EmptyState title="Nothing saved yet">
-              Save a sale and it lands here, with the host&rsquo;s live status attached.
+              Tap the heart on a sale and it lands here.
             </EmptyState>
           )}
         </Section>
@@ -181,14 +181,30 @@ export default async function ShopPage() {
           {toBrowse.length > 0 ? (
             <ul className="space-y-3">
               {toBrowse.map((sale) => (
-                <SaleCard key={sale.id} sale={sale} distanceMiles={sale.distance_miles} />
+                <SaleCard
+                  key={sale.id}
+                  sale={sale}
+                  distanceMiles={sale.distance_miles}
+                  categories={categories.get(sale.id)}
+                />
               ))}
             </ul>
           ) : (
-            <p className="rounded-[14px] border border-hair bg-panel px-4 py-6 text-center text-sm text-ink-soft">
-              {hasHome
-                ? "No sales listed near you in the next week. Widen your radius on your account page, or check back — Saturday fills up fast."
-                : "Set your location to see what's nearby."}
+            // A plain line, not another EmptyState: Nub is already shrugging
+            // directly above whenever both lists are empty, and twice on one
+            // screen is once too many.
+            <p className="rounded-[14px] border border-hair bg-panel px-4 py-5 text-sm text-ink-soft">
+              {hasHome ? (
+                <>
+                  Nothing near you this week.{" "}
+                  <Link href="/account" className="font-semibold text-ink underline underline-offset-4">
+                    Widen your radius
+                  </Link>
+                  , or check back &mdash; Saturday fills up fast.
+                </>
+              ) : (
+                "Set your location to see what's nearby."
+              )}
             </p>
           )}
         </Section>
@@ -197,7 +213,7 @@ export default async function ShopPage() {
           <Section title="Already happened">
             <ul className="space-y-3 opacity-70">
               {savedPast.map((sale) => (
-                <SaleCard key={sale.id} sale={sale} />
+                <SaleCard key={sale.id} sale={sale} categories={categories.get(sale.id)} />
               ))}
             </ul>
           </Section>

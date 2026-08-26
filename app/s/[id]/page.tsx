@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
 import { TagPin } from "@/components/TagPin";
+import { CategoryChips } from "@/components/CategoryChips";
 import { SaleRealtime } from "@/components/SaleRealtime";
 import { SALE_STATUS_META } from "@/lib/sale-status";
 import { effectivePrice, formatMoney } from "@/lib/pricing";
@@ -70,7 +71,10 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
         .select("id, name, price, item_discount_percent, exclude_from_bulk, is_sold")
         .eq("sale_id", id)
         .order("position"),
-      supabase.from("sale_categories").select("categories(slug, label, color)").eq("sale_id", id),
+      supabase
+        .from("sale_categories")
+        .select("categories(id, label, color, position)")
+        .eq("sale_id", id),
       supabase.from("public_profiles").select("username, bio").eq("id", sale.host_id).maybeSingle(),
       user
         ? supabase
@@ -85,7 +89,9 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
   const meta = SALE_STATUS_META[sale.status];
   const isHost = user?.id === sale.host_id;
   const publicBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/sale-photos`;
-  const categories = (cats ?? []).flatMap((row) => (row.categories ? [row.categories] : []));
+  const categories = (cats ?? [])
+    .flatMap((row) => (row.categories ? [row.categories] : []))
+    .sort((a, b) => a.position - b.position || a.id - b.id);
   const forSale = (items ?? []).filter((i) => !i.is_sold);
   const sold = (items ?? []).filter((i) => i.is_sold);
 
@@ -130,8 +136,7 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
 
         {!sale.location_is_exact && (
           <p className="mt-2 rounded-[10px] bg-panel px-3.5 py-2.5 text-sm text-ink-soft">
-            The full address appears here half an hour before the sale opens. Hosts&rsquo; exact
-            addresses stay private until then.
+            Full address appears half an hour before it opens.
           </p>
         )}
 
@@ -146,16 +151,11 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
               FREE PILE
             </span>
           )}
-          {categories.map((c) => (
-            <span
-              key={c.slug}
-              className="rounded-full px-2.5 py-0.5 font-mono text-xs font-bold text-ink"
-              style={{ backgroundColor: `${c.color}22` }}
-            >
-              {c.label}
-            </span>
-          ))}
         </div>
+
+        {/* Same chips, same colours, same order as the list this sale was
+            tapped from — see components/CategoryChips.tsx. */}
+        <CategoryChips categories={categories} className="mt-3" />
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <SaveButton saleId={sale.id} initialSaved={Boolean(watching)} signedIn={Boolean(user)} />
@@ -203,10 +203,9 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
 
         {(items?.length ?? 0) > 0 && (
           <section className="mt-8">
+            {/* "Prices update live" is gone — they visibly do, over Realtime,
+                while you're looking at them. */}
             <h2 className="font-display text-xl font-bold">Some of what&rsquo;s there</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              A few highlights, not the whole garage. Prices update live as the host drops them.
-            </p>
 
             <ul className="mt-4 space-y-2">
               {forSale.map((item) => {
@@ -272,8 +271,8 @@ export default async function SalePage({ params }: PageProps<"/s/[id]">) {
             no money moves through the platform — so say so where the deal
             actually happens. */}
         <p className="mt-8 rounded-[14px] border border-hair bg-panel px-4 py-3 text-sm text-ink-soft">
-          Pay the host directly — cash, Venmo, whatever you agree. XLResale doesn&rsquo;t handle
-          payments and never takes a cut. Meet safely and trust your gut.
+          Pay the host directly, cash or Venmo &mdash; XLResale never handles the money, and never
+          takes a cut. Meet safely.
         </p>
       </main>
     </>

@@ -17,20 +17,17 @@ and finding it hard to move around.
 
 Done in that pass: a single navigation bar, a category tree with subcategories on both
 sides, finger-drag and swipe on the route planner, the install prompt reworded and moved,
-and **the role chooser** (§9).
+**the role chooser** (§9), and **the copy-and-visual pass** (§10).
 
-**Not done, and next up:**
-
-1. **Copy-and-visual pass** — T.J.'s words: the app is "far too wordy". Cut the
-   explanatory paragraphs, bring Nub into empty states, use the category colours. The
-   account page is now assembled from a keyed record of cards
-   (`CARD_ORDER` in `app/account/page.tsx`), so rewriting its copy is a contained edit.
+**Not done, and next up:** the UX pass is finished. §8 is the priority list — the top of
+it is finds sharing, which the brief calls the growth loop, and the free-pile map filter.
+Stripe stays last at T.J.'s instruction.
 
 ---
 
 ## 2. What is built
 
-**23 pages** · **3 API routes** · **14 migrations** · **50 commits**
+**23 pages** · **3 API routes** · **14 migrations** · **51 commits**
 
 | Area | State |
 |---|---|
@@ -203,7 +200,8 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
   `/host`. The Map tab is also leftmost in the nav, so it stays one tap from everywhere.
 - **Categories** ✅ built.
 - **Touch drag + swipe-to-remove on the route** ✅ built, **unverified on a real device**.
-- **Less wordy, more visual** ⬜ not started.
+- **Less wordy, more visual** ✅ done, see §10. 20% fewer words across the signed-in app,
+  and category colour is now carried on the cards a shopper actually scans.
 
 ---
 
@@ -215,11 +213,8 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
 2. Privacy policy exists but the contact address `hello@xlresale.com` may not be real, and
    nobody qualified has reviewed it.
 
-**The agreed UX pass**
-3. Copy-and-visual pass — cut paragraphs, Nub in empty states, category colours.
-
 **Buyer gaps**
-4. **Finds sharing** — logging works, sharing doesn't. No photo upload, no Open Graph
+3. **Finds sharing** — logging works, sharing doesn't. No photo upload, no Open Graph
    share pages, no Web Share API. The brief calls this the growth loop.
 5. Free-pile map filter ("sales with free stuff") — the badge exists, the filter doesn't.
 
@@ -297,7 +292,49 @@ been proven through `/welcome`'s own redirect, not through the login form.
 
 ---
 
-## 10. How this session worked
+## 10. The copy-and-visual pass, as done
+
+T.J.'s brief: the app is "far too wordy", bring Nub into empty states, use the category
+colours. **20% fewer visible words** across the signed-in app — `/account` −32%,
+`/shop` −29% — measured by rendering each page before and after and counting.
+
+**The rule used for cutting.** A line survives only if it says something the page can't
+show. What went was the paragraph that named the buttons directly underneath it
+(`/shop`'s subhead listed its own three sections; five account cards explained their own
+link), the sentence narrating what the interface already demonstrates (the route planner
+claiming it beats closing times, above stop cards showing a hit, a near-miss and a miss;
+"prices update live" above prices that visibly update over Realtime), and the second
+sentence of anything that had made its point in the first.
+
+What stayed: the safety and money lines the brief requires (`/s/[id]` still says pay the
+host directly, no cut, meet safely — one sentence instead of three), anything about what
+is kept private, and the reassurance at the top of the sale form, which is the sentence
+that gets somebody to start filling one in.
+
+**Nub is now on the empty states that had none** — the empty map, which is the first
+thing a lot of people will ever see, and the route planner. One Nub per screen, so
+`/shop`'s second empty list stayed a plain line rather than shrugging at you twice.
+
+**Category colour reaches the cards people scan.** `components/CategoryChips.tsx` is one
+component for the chips, so a sale reads the same in a list, in an alert, and on its own
+page; `lib/sale-categories.ts` fetches them for a whole list in one round trip rather than
+one per row. The landing page now reads its chips from the database — it had eight
+hardcoded labels from before the tree renamed them, so it was advertising "Vinyl / Media"
+and "Outdoors" to people who would then find "Books, Music & Media" and "Outdoors &
+Camping" in the filters.
+
+**Two bugs found while in there.** The bulk-lot preference rendered a checkbox per
+category — eight before the category tree landed, **101** after it; it's parents only now.
+And the 404's "Back to the map" button went to the landing page.
+
+**Not covered:** the map's own preview card has no category chips. Its sales arrive from
+an RPC and can be refetched client-side after a locate, so there is no cheap place to hang
+a second query — it needs either an array column on the RPC's return type or a client
+fetch, and neither was worth it for a card you see one at a time.
+
+---
+
+## 11. How this session worked
 
 T.J. is a screenwriter, not a developer, and does not use a terminal. Run every command
 yourself and give dashboard click-paths for anything that must happen in a GUI.

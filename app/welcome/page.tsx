@@ -62,8 +62,7 @@ export default async function WelcomePage() {
       </div>
 
       <p className="mt-6 text-sm text-muted">
-        Changeable any time, and nothing is hidden either way &mdash; this just decides what
-        you see first.
+        Nothing gets hidden either way. Change it any time.
       </p>
     </main>
   );

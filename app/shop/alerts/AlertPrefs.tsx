@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import { FormError, SubmitButton } from "@/components/form";
 import { saveAlertPrefs, type Result } from "./actions";
@@ -52,39 +52,51 @@ export function AlertPrefs({
   // Controlled so the category list can appear and disappear with the toggle.
   const [bulk, setBulk] = useState(bulkLotsEnabled);
 
+  // Parents only. This was a flat map over everything, which was eight
+  // checkboxes before the category tree landed and a hundred and one after it —
+  // nobody is reading a hundred and one checkboxes to say what junk they'll
+  // take. Bulk lots are a whole garage anyway; "Furniture" is as precise as the
+  // question deserves.
+  const topLevel = useMemo(
+    () =>
+      categories.filter((c) => c.parent_id === null).sort((a, b) => a.position - b.position),
+    [categories],
+  );
+
   return (
     <form action={action} className="mt-4 space-y-6">
-      <div className="space-y-3">
+      <div>
         <Check name="email_enabled" defaultChecked={emailEnabled}>
           <span className="font-semibold">Email me</span> when something on my list shows up nearby.
         </Check>
-        <p className="text-sm text-muted">
-          Push and text messages come later. Email is the only channel wired up right now.
-        </p>
       </div>
 
       <div className="rounded-[16px] border border-hair bg-canvas p-4">
         <Check name="bulk_lots_enabled" checked={bulk} onChange={setBulk}>
-          <span className="font-semibold">Tell me about bulk lots.</span> When a host is packing up
-          and wants one person to take everything that&rsquo;s left, we&rsquo;ll let you know the
-          price. You deal with them directly.
+          <span className="font-semibold">Tell me about bulk lots.</span> A host packing up who
+          wants one person to take everything left. You deal with them directly.
         </Check>
 
         {bulk && (
           <fieldset className="mt-4">
-            <legend className="text-sm font-semibold">What do you actually want?</legend>
-            <p className="mt-1 text-sm text-muted">
-              Leave all unticked to hear about everything.
-            </p>
+            <legend className="text-sm font-semibold">Anything in particular?</legend>
+            <p className="mt-1 text-sm text-muted">Leave it blank to hear about everything.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {categories.map((c) => (
+              {topLevel.map((c) => (
                 <Check
                   key={c.id}
                   name="bulk_lot_categories"
                   value={String(c.id)}
                   defaultChecked={bulkLotCategories.includes(c.id)}
                 >
-                  {c.label}
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: c.color }}
+                    />
+                    {c.label}
+                  </span>
                 </Check>
               ))}
             </div>

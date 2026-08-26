@@ -188,10 +188,7 @@ export function FindsManager({
           <span className="text-sm">
             <span className="font-semibold">Show this on my profile.</span>{" "}
             {username ? (
-              <>
-                Public finds appear at <span className="font-mono text-[13px]">/u/{username}</span> for
-                anyone with the link.
-              </>
+              <span className="font-mono text-[13px]">/u/{username}</span>
             ) : (
               <>Claim a handle on your account page to get a profile others can see.</>
             )}

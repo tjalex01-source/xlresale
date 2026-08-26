@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
 import { SaleCard } from "@/components/SaleCard";
+import { categoriesBySale } from "@/lib/sale-categories";
 import { formatSaleDay } from "@/lib/sale-time";
 import type { SaleStatus } from "@/lib/database.types";
 import { InstallAndNotify } from "@/components/InstallAndNotify";
@@ -70,6 +71,11 @@ export default async function AlertsPage() {
 
   const unseen = (alerts ?? []).filter((a) => !a.seen_at).length;
 
+  const categoriesFor = await categoriesBySale(
+    supabase,
+    (alerts ?? []).flatMap((a) => (a.sales ? [(a.sales as AlertSale).id] : [])),
+  );
+
   return (
     <>
       <header className="mx-auto flex w-full max-w-2xl items-center gap-4 px-6 py-6">
@@ -86,8 +92,7 @@ export default async function AlertsPage() {
           What you&rsquo;re looking for
         </h1>
         <p className="mt-3 text-ink-soft">
-          Tell us the thing you&rsquo;d drive across town for. When someone lists it near you,
-          you&rsquo;ll hear about it.
+          Tell us and we&rsquo;ll say when it turns up near you.
         </p>
 
         {(alerts?.length ?? 0) > 0 && (
@@ -112,7 +117,7 @@ export default async function AlertsPage() {
                       </p>
                     )}
                     <ul>
-                      <SaleCard sale={sale} />
+                      <SaleCard sale={sale} categories={categoriesFor.get(sale.id)} />
                     </ul>
                   </div>,
                 ];

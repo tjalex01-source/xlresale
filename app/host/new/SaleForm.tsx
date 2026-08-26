@@ -100,9 +100,7 @@ export function SaleForm({ categories }: { categories: PickerCategory[] }) {
 
       <fieldset>
         <legend className="text-sm font-semibold">What have you got?</legend>
-        <p className="mt-1 text-sm text-muted">
-          This is how shoppers find you. Tap for more specific options.
-        </p>
+        <p className="mt-1 text-sm text-muted">This is how shoppers find you.</p>
         <div className="mt-3">
           <CategoryPicker categories={categories} />
         </div>
@@ -139,7 +137,7 @@ export function SaleForm({ categories }: { categories: PickerCategory[] }) {
       <div>
         <SubmitButton pending="Saving…">Save and add photos</SubmitButton>
         <p className="mt-3 text-sm text-muted">
-          Nothing is charged yet. Your sale stays private until you publish it for $5.
+          Nothing is charged yet &mdash; it stays private until you publish it for $5.
         </p>
       </div>
     </form>

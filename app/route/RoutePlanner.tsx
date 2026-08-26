@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
+import { EmptyState } from "@/components/EmptyState";
 import { formatSaleDay } from "@/lib/sale-time";
 import {
   DWELL_MINUTES,
@@ -139,13 +140,17 @@ export function RoutePlanner({
 
   if (!home) {
     return (
-      <div className="rounded-[16px] bg-tangerine-50 px-4 py-4 text-sm text-tangerine-ink">
-        A route has to start somewhere. Set your home address on your{" "}
-        <Link href="/account" className="font-bold underline underline-offset-4">
-          account page
-        </Link>{" "}
-        and come back.
-      </div>
+      <EmptyState
+        title="A route has to start somewhere"
+        action={
+          <Link
+            href="/account"
+            className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
+          >
+            Set your home address
+          </Link>
+        }
+      />
     );
   }
 
@@ -186,9 +191,7 @@ export function RoutePlanner({
             className="mt-1.5 rounded-[10px] border border-hair bg-canvas px-3.5 py-2.5 font-mono text-base outline-none focus:border-pink"
           />
         </div>
-        <p className="text-sm text-muted">
-          {DWELL_MINUTES} minutes at each sale. Times are rough until you pull real drive times.
-        </p>
+        <p className="font-mono text-sm text-muted">{DWELL_MINUTES} min at each sale</p>
       </div>
 
       {/* ---- the route ---- */}
@@ -197,7 +200,7 @@ export function RoutePlanner({
 
         {chosen.length === 0 ? (
           <p className="mt-3 rounded-[14px] border border-hair bg-panel px-4 py-5 text-sm text-ink-soft">
-            Add a stop from below and the timings appear here.
+            Add a stop below.
           </p>
         ) : (
           <>
@@ -221,13 +224,11 @@ export function RoutePlanner({
                     {schedule.missCount === 1
                       ? "One sale closes before you get there."
                       : `${schedule.missCount} sales close before you get there.`}{" "}
-                    Try Optimise, an earlier start, or drop a stop.
+                    Try Optimise.
                   </p>
                 )}
                 <p className="mt-2 text-sm text-muted">
-                  {roadLegsFresh
-                    ? "Using real road drive times."
-                    : "Rough estimates. Pull real drive times before you trust a tight one."}
+                  {roadLegsFresh ? "Real road times." : "Rough estimates."}
                 </p>
               </div>
             )}
@@ -291,13 +292,19 @@ export function RoutePlanner({
         <h2 className="font-display text-xl font-bold">Saved for {formatSaleDay(day)}</h2>
 
         {dayCandidates.length === 0 ? (
-          <p className="mt-3 rounded-[14px] border border-hair bg-panel px-4 py-5 text-sm text-ink-soft">
-            Nothing saved for this day.{" "}
-            <Link href="/map" className="font-semibold text-ink underline underline-offset-4">
-              Find sales on the map
-            </Link>
-            .
-          </p>
+          // The page's one Nub. When this is empty the route above is empty
+          // too, and the thing to do about it lives here, not there.
+          <EmptyState
+            title="Nothing saved for this day"
+            action={
+              <Link
+                href="/map"
+                className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-4 text-sm font-semibold text-canvas hover:opacity-90"
+              >
+                Find sales on the map
+              </Link>
+            }
+          />
         ) : (
           <ul className="mt-3 space-y-2">
             {dayCandidates.map((sale) => {

@@ -47,23 +47,15 @@ const VERDICT = {
   miss: { mark: "✕", color: "var(--color-pink-ink)", tint: "var(--color-pink-50)" },
 } as const;
 
-const CATEGORIES = [
-  { label: "Tools", tint: "var(--color-pink-50)", color: "var(--color-pink-ink)", tilt: -3 },
-  { label: "Vinyl / Media", tint: "var(--color-violet-50)", color: "var(--color-violet-ink)", tilt: 2 },
-  { label: "Furniture", tint: "var(--color-tangerine-50)", color: "var(--color-tangerine-ink)", tilt: -2 },
-  { label: "Baby & Kids", tint: "var(--color-green-50)", color: "var(--color-green-ink)", tilt: 3 },
-  { label: "Clothing", tint: "var(--color-pink-50)", color: "var(--color-pink-ink)", tilt: 1 },
-  { label: "Outdoors", tint: "var(--color-green-50)", color: "var(--color-green-ink)", tilt: -3 },
-  { label: "Collectibles", tint: "var(--color-tangerine-50)", color: "var(--color-tangerine-ink)", tilt: 2 },
-  { label: "Home & Kitchen", tint: "var(--color-violet-50)", color: "var(--color-violet-ink)", tilt: -1 },
-] as const;
+/** The sticker chips lean by these, cycled — see DESIGN.md → sticker chips. */
+const TILTS = [-3, 2, -2, 3, 1, -3, 2, -1];
 
 export default async function Home() {
   const supabase = await createClient();
 
   // The pill says "open right now", so it has to be true. RLS keeps this to
   // paid, published sales — the same set a shopper would see on the map.
-  const [{ data: userData }, { count }] = await Promise.all([
+  const [{ data: userData }, { count }, { data: categoryRows }] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from("sales")
@@ -72,8 +64,19 @@ export default async function Home() {
       .select("id", { count: "exact", head: true })
       .eq("status", "live")
       .eq("listing_paid", true),
+    // Read, not hardcoded. This list was eight literals with the labels the
+    // categories had before the tree renamed them, so the landing page was
+    // advertising "Vinyl / Media" and "Outdoors" to people who would then find
+    // "Books, Music & Media" and "Outdoors & Camping" in the filters.
+    supabase
+      .from("categories")
+      .select("id, label, color")
+      .is("parent_id", null)
+      .order("position")
+      .limit(10),
   ]);
   const user = userData.user;
+  const categories = (categoryRows ?? []).map((c, i) => ({ ...c, tilt: TILTS[i % TILTS.length] }));
 
   return (
     <>
@@ -93,8 +96,7 @@ export default async function Home() {
             </h2>
             <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-soft">
               The host taps <strong className="font-semibold text-ink">Go live</strong> when they
-              open up, and your map turns green the same second. No more driving across town to a
-              folded table and an empty driveway.
+              open up. No more driving across town to a folded table and an empty driveway.
             </p>
 
             {/* He points at the green pin — the live state this section is about. */}
@@ -137,10 +139,10 @@ export default async function Home() {
                 A route that beats
                 <br className="hidden sm:block" /> the clock.
               </h2>
+              {/* The receipts on the right already show a miss and a near-miss.
+                  The paragraph was narrating what they demonstrate. */}
               <p className="mt-5 max-w-md text-lg leading-relaxed text-[#C9C4D4]">
-                Shortest distance is the wrong answer when the good one closes at eleven. Drag your
-                stops around and every arrival time recalculates against that sale&rsquo;s closing
-                time &mdash; so you know what you&rsquo;ll make before you turn the key.
+                Shortest distance is the wrong answer when the good one closes at eleven.
               </p>
             </div>
 
@@ -209,19 +211,21 @@ export default async function Home() {
                 <Nub pose="grab" width={130} className="w-[92px] sm:w-[130px]" decorative />
               </NubReveal>
             </div>
+            {/* The chips carry each category's own colour, so a shopper who
+                learns "tangerine is furniture" here reads it the same way on
+                every pin and every card. */}
             <ul className="mt-8 flex flex-wrap gap-3">
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <li
-                  key={c.label}
-                  className="sticker-chip rounded-[10px] px-4 py-2.5 font-semibold shadow-[0_2px_8px_rgb(23_19_31_/_0.08)]"
-                  style={
-                    {
-                      "--tilt": `${c.tilt}deg`,
-                      backgroundColor: c.tint,
-                      color: c.color,
-                    } as React.CSSProperties
-                  }
+                  key={c.id}
+                  className="sticker-chip flex items-center gap-2 rounded-[10px] bg-panel px-4 py-2.5 font-semibold shadow-[0_2px_8px_rgb(23_19_31_/_0.08)]"
+                  style={{ "--tilt": `${c.tilt}deg` } as React.CSSProperties}
                 >
+                  <span
+                    aria-hidden
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: c.color }}
+                  />
                   {c.label}
                 </li>
               ))}
@@ -254,8 +258,7 @@ export default async function Home() {
                 />
                 <p className="text-lg leading-relaxed">
                   Post your hours, tag what you&rsquo;re selling, add photos. Tap{" "}
-                  <strong className="font-semibold">Go live</strong> Saturday morning and watch the
-                  shoppers who already have you on their route.
+                  <strong className="font-semibold">Go live</strong> Saturday morning.
                 </p>
                 <div className="mt-7 flex items-center gap-3">
                   {/* Hand-drawn accent pointing at the CTA (DESIGN.md → signatures). */}

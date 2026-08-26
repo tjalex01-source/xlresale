@@ -110,10 +110,7 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
           <GoLiveCard saleId={sale.id} status={sale.status} watcherCount={watcherCount ?? 0} />
         </div>
 
-        <Card
-          title="How your pin looks"
-          hint="What a shopper sees on the map right now."
-        >
+        <Card title="How your pin looks">
           <div className="flex items-center gap-4 rounded-[16px] border border-hair bg-canvas p-4">
             <TagPin status={sale.status} size={40} />
             <div>
@@ -137,10 +134,7 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
           </div>
         </Card>
 
-        <Card
-          title="Your featured items"
-          hint="Your ten or twenty best. Tap one sold and it drops off the map."
-        >
+        <Card title="Your featured items" hint="Tap one sold and it drops off the map.">
           <FeaturedItems
             saleId={sale.id}
             items={items ?? []}
@@ -157,10 +151,9 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
           />
         </Card>
 
-        <Card
-          title="Take it down"
-          hint="If you ever feel uneasy about who is turning up, use this."
-        >
+        {/* The one hint on this page written for a feeling rather than a fact.
+            Kept as-is: somebody reaching for this is not skim-reading. */}
+        <Card title="Take it down" hint="If you feel uneasy about who's turning up.">
           <TakedownCard saleId={sale.id} initialHidden={sale.hidden_at !== null} />
         </Card>
 
@@ -174,7 +167,7 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
         </Card>
 
         {!sale.listing_paid && (
-          <Card title="Publish" hint="$5 puts this on the map. Until then only you can see it.">
+          <Card title="Publish" hint="$5 puts this on the map.">
             <button
               type="button"
               disabled

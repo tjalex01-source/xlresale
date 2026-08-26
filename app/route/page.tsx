@@ -45,13 +45,11 @@ export default async function RoutePage() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl px-6 pb-24">
+        {/* No subhead: the verdict chips on every stop demonstrate "beats the
+            closing time" far better than a sentence claiming it does. */}
         <h1 className="font-display text-[clamp(2rem,4vw,2.75rem)] font-extrabold leading-none tracking-[-0.02em]">
           Plan your route
         </h1>
-        <p className="mt-3 text-ink-soft">
-          Not just the shortest drive &mdash; an order that gets you to each sale{" "}
-          <span className="font-semibold text-ink">before it closes</span>.
-        </p>
 
         <div className="mt-6">
           <RoutePlanner

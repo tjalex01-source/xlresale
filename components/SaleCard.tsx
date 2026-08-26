@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { TagPin } from "@/components/TagPin";
+import { CategoryChips, type ChipCategory } from "@/components/CategoryChips";
 import { SALE_STATUS_META } from "@/lib/sale-status";
 import { formatHours, formatMiles, formatSaleDay, shouldShowStatus } from "@/lib/sale-time";
 import type { SaleStatus } from "@/lib/database.types";
@@ -15,6 +16,7 @@ import type { SaleStatus } from "@/lib/database.types";
 export function SaleCard({
   sale,
   distanceMiles,
+  categories = [],
   trailing,
 }: {
   sale: {
@@ -30,6 +32,9 @@ export function SaleCard({
     discount_active?: boolean;
   };
   distanceMiles?: number | null;
+  /** What's at the sale. The fastest thing on the row to read — see
+   *  CategoryChips. Capped so a host who ticked twelve doesn't own the list. */
+  categories?: ChipCategory[];
   /** Optional control on the right, e.g. a remove button. */
   trailing?: React.ReactNode;
 }) {
@@ -56,6 +61,8 @@ export function SaleCard({
         </p>
 
         <p className="mt-0.5 truncate text-sm text-muted">{sale.address}</p>
+
+        <CategoryChips categories={categories} max={3} className="mt-2" />
 
         {(sale.discount_active || sale.free_pile) && (
           <div className="mt-2 flex flex-wrap gap-2">

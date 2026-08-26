@@ -26,8 +26,9 @@ export default function NotFound() {
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {/* Said "Back to the map" and went to the landing page. */}
           <Link
-            href="/"
+            href="/map"
             className="inline-flex items-center rounded-[15px] bg-pink px-[26px] py-[15px] text-[19px] font-bold text-white shadow-[0_6px_18px_rgb(255_46_99_/_0.32)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
           >
             Back to the map
