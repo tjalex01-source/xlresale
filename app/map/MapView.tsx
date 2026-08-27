@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 
 import { createClient } from "@/lib/supabase/client";
+import { CategoryChips } from "@/components/CategoryChips";
 import { EmptyState } from "@/components/EmptyState";
 import { tagPinDataUri } from "@/lib/map-pin";
 import { SALE_STATUS_META } from "@/lib/sale-status";
@@ -14,13 +15,23 @@ import type { UpcomingSale } from "@/lib/database.types";
 /** Fallback view when there's nothing to fit to: roughly Tyler, TX. */
 const FALLBACK_CENTER = { lat: 32.35, lng: -95.3 };
 
+/** Just enough of a category row to colour a chip, keyed by the slug the RPC returns. */
+export interface MapCategory {
+  id: number;
+  slug: string;
+  label: string;
+  color: string;
+}
+
 export function MapView({
   initialSales,
+  categories,
   hasHome,
   signedIn,
   radiusMiles,
 }: {
   initialSales: UpcomingSale[];
+  categories: MapCategory[];
   hasHome: boolean;
   signedIn: boolean;
   radiusMiles: number;
@@ -38,6 +49,7 @@ export function MapView({
   const [sales, setSales] = useState(initialSales);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [day, setDay] = useState<string | null>(null);
+  const [freeOnly, setFreeOnly] = useState(false);
   const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error">(
     key ? "loading" : "no-key",
   );
@@ -45,7 +57,24 @@ export function MapView({
   const [locateError, setLocateError] = useState<string | null>(null);
 
   const days = useMemo(() => [...new Set(sales.map((s) => s.sale_date))].sort(), [sales]);
-  const visible = useMemo(() => (day ? sales.filter((s) => s.sale_date === day) : sales), [day, sales]);
+
+  // Computed over every sale, not the day-filtered set, so the toggle doesn't
+  // appear and vanish as you tap between days. If nobody in range has put
+  // anything out for free, the control is noise and isn't rendered at all.
+  const anyFreePile = useMemo(() => sales.some((s) => s.free_pile), [sales]);
+
+  const visible = useMemo(
+    () =>
+      sales.filter(
+        (s) => (!day || s.sale_date === day) && (!freeOnly || s.free_pile),
+      ),
+    [sales, day, freeOnly],
+  );
+
+  const bySlug = useMemo(
+    () => new Map(categories.map((c) => [c.slug, c])),
+    [categories],
+  );
 
   // Derived rather than stored, so a pin hidden by the day filter closes its
   // own card. Holding the selection as state would need an effect to clear it,
@@ -150,7 +179,7 @@ export function MapView({
           position: { lat: sale.lat, lng: sale.lng },
           title: sale.title,
           icon: {
-            url: tagPinDataUri(sale.status),
+            url: tagPinDataUri(sale.status, { freePile: sale.free_pile }),
             scaledSize: new google.maps.Size(40, 52),
             anchor: new google.maps.Point(20, 49),
           },
@@ -174,7 +203,8 @@ export function MapView({
     };
   }, [sales, status]);
 
-  // The day filter only toggles visibility — no map calls, no marker rebuilds.
+  // Both filters only toggle visibility — no map calls, no marker rebuilds.
+  // MAPS-COST-CONTROLS.md §2: filtering must never touch the map instance.
   useEffect(() => {
     const shown = new Set(visible.map((s) => s.id));
     for (const [id, marker] of markersRef.current) marker.setVisible(shown.has(id));
@@ -190,7 +220,7 @@ export function MapView({
       const marker = markers.get(previous);
       if (sale && marker) {
         marker.setIcon({
-          url: tagPinDataUri(sale.status),
+          url: tagPinDataUri(sale.status, { freePile: sale.free_pile }),
           scaledSize: new google.maps.Size(40, 52),
           anchor: new google.maps.Point(20, 49),
         });
@@ -200,7 +230,7 @@ export function MapView({
     if (selected) {
       const marker = markers.get(selected.id);
       marker?.setIcon({
-        url: tagPinDataUri(selected.status, true),
+        url: tagPinDataUri(selected.status, { selected: true, freePile: selected.free_pile }),
         scaledSize: new google.maps.Size(46, 60),
         anchor: new google.maps.Point(23, 57),
       });
@@ -221,31 +251,59 @@ export function MapView({
 
   return (
     <div>
-      {days.length > 1 && (
+      {(days.length > 1 || anyFreePile) && (
         <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            aria-pressed={day === null}
-            onClick={() => setDay(null)}
-            className={`inline-flex min-h-11 items-center rounded-[10px] border px-4 text-sm font-bold ${
-              day === null ? "border-pink bg-pink-50 text-pink-ink" : "border-hair bg-panel hover:border-pink"
-            }`}
-          >
-            All week
-          </button>
-          {days.map((d) => (
+          {days.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-pressed={day === null}
+                onClick={() => setDay(null)}
+                className={`inline-flex min-h-11 items-center rounded-[10px] border px-4 text-sm font-bold ${
+                  day === null ? "border-pink bg-pink-50 text-pink-ink" : "border-hair bg-panel hover:border-pink"
+                }`}
+              >
+                All week
+              </button>
+              {days.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={day === d}
+                  onClick={() => setDay(d)}
+                  className={`inline-flex min-h-11 items-center rounded-[10px] border px-4 text-sm font-bold ${
+                    day === d ? "border-pink bg-pink-50 text-pink-ink" : "border-hair bg-panel hover:border-pink"
+                  }`}
+                >
+                  {formatSaleDay(d)}
+                </button>
+              ))}
+            </>
+          )}
+
+          {/* A toggle, not another day. It's green because that's the colour of
+              the FREE badge it filters for, and it sits apart from the days so
+              the two don't read as one row of alternatives. */}
+          {anyFreePile && (
             <button
-              key={d}
               type="button"
-              aria-pressed={day === d}
-              onClick={() => setDay(d)}
-              className={`inline-flex min-h-11 items-center rounded-[10px] border px-4 text-sm font-bold ${
-                day === d ? "border-pink bg-pink-50 text-pink-ink" : "border-hair bg-panel hover:border-pink"
+              aria-pressed={freeOnly}
+              onClick={() => setFreeOnly((on) => !on)}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-[10px] border px-4 text-sm font-bold ${
+                days.length > 1 ? "sm:ml-auto" : ""
+              } ${
+                freeOnly
+                  ? "border-green bg-green-50 text-green-ink"
+                  : "border-hair bg-panel hover:border-green hover:text-green-ink"
               }`}
             >
-              {formatSaleDay(d)}
+              <span
+                aria-hidden
+                className={`size-2.5 rounded-full ${freeOnly ? "bg-green" : "bg-grey"}`}
+              />
+              Free stuff
             </button>
-          ))}
+          )}
         </div>
       )}
 
@@ -295,6 +353,17 @@ export function MapView({
                 </p>
               )}
 
+              {/* The RPC hands back each sale's category slugs, so the preview
+                  can carry the same coloured chips as every list. */}
+              <CategoryChips
+                categories={selected.categories.flatMap((slug) => {
+                  const category = bySlug.get(slug);
+                  return category ? [category] : [];
+                })}
+                max={3}
+                className="mt-2"
+              />
+
               {(selected.discount_active || selected.free_pile) && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {selected.discount_active && (
@@ -329,12 +398,37 @@ export function MapView({
           </Link>
         </article>
       ) : (
-        sales.length > 0 && (
+        sales.length > 0 &&
+        (visible.length > 0 ? (
           <p className="mt-4 text-sm text-ink-soft">
             {visible.length} {visible.length === 1 ? "sale" : "sales"}
+            {freeOnly && " with free stuff"}
             {day ? ` on ${formatSaleDay(day)}` : " in the next week"}. Tap a pin.
           </p>
-        )
+        ) : (
+          // Filters can exclude everything while the map still holds pins, and
+          // an empty map with no explanation reads as a broken one. This says
+          // which filter did it, and undoes it in a tap.
+          <p className="mt-4 flex flex-wrap items-center gap-3 text-sm text-ink-soft">
+            <span>
+              {freeOnly && day
+                ? `No free piles on ${formatSaleDay(day)}.`
+                : freeOnly
+                  ? "Nobody near you is putting anything out for free this week."
+                  : `Nothing on ${day ? formatSaleDay(day) : "that day"}.`}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setDay(null);
+                setFreeOnly(false);
+              }}
+              className="font-semibold text-ink underline underline-offset-4 hover:text-pink"
+            >
+              Show everything
+            </button>
+          </p>
+        ))
       )}
 
       {/* An empty map is the first thing a lot of people will ever see of

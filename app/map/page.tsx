@@ -35,6 +35,15 @@ export default async function MapPage() {
       ])
     : [{ data: null }, { data: null }, { data: null }];
 
+  // Every category, so the preview card can colour a sale's tags. It's ~100
+  // small rows fetched once for the page, and `sales_near_upcoming` already
+  // returns each sale's slugs — which is what makes this cheap enough to bother
+  // with, including for the sales the client re-fetches after a locate.
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, slug, label, color")
+    .order("position");
+
   return (
     <>
       <header className="mx-auto flex w-full max-w-3xl items-center gap-4 px-6 py-6">
@@ -57,6 +66,7 @@ export default async function MapPage() {
         <div className="mt-6">
           <MapView
             initialSales={sales ?? []}
+            categories={categories ?? []}
             hasHome={Boolean(profile?.home_address)}
             signedIn={Boolean(user)}
             radiusMiles={prefs?.radius_miles ?? 20}

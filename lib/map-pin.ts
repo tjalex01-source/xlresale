@@ -13,7 +13,10 @@ import type { SaleStatus } from "@/lib/database.types";
  * animations don't run in an SVG loaded as an image, but SMIL does, so this is
  * the one way to get the halo without a Map ID and Advanced Markers.
  */
-export function tagPinDataUri(status: SaleStatus, selected = false): string {
+export function tagPinDataUri(
+  status: SaleStatus,
+  { selected = false, freePile = false }: { selected?: boolean; freePile?: boolean } = {},
+): string {
   const { hex, pulse } = SALE_STATUS_META[status];
   const stroke = selected ? `stroke="#17131f" stroke-width="2.5"` : "";
 
@@ -24,10 +27,22 @@ export function tagPinDataUri(status: SaleStatus, selected = false): string {
        </circle>`
     : "";
 
+  // A free pile is a separate signal from status, so it gets its own mark
+  // rather than changing the tag's colour (CLAUDE.md §6 is explicit that FREE
+  // and the discount ribbon stay separate). The canvas-coloured ring is what
+  // keeps it legible on the one pin that is already green — a live sale.
+  //
+  // A dot, not the word: at 40px across, four letters are mush.
+  const free = freePile
+    ? `<circle cx="32" cy="9" r="7" fill="#fffdf9"/>
+       <circle cx="32" cy="9" r="4.6" fill="#12b76a"/>`
+    : "";
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 52" width="40" height="52">
   ${halo}
   <path d="M6 3h28a5 5 0 0 1 5 5v24a5 5 0 0 1-5 5h-8.5L20 49l-5.5-12H6a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5z" fill="${hex}" ${stroke}/>
   <circle cx="12" cy="13" r="3.4" fill="#fffdf9" opacity="0.9"/>
+  ${free}
 </svg>`;
 
   // encodeURIComponent rather than base64: it keeps the markup readable in

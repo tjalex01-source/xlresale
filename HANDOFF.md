@@ -19,22 +19,23 @@ Done in that pass: a single navigation bar, a category tree with subcategories o
 sides, finger-drag and swipe on the route planner, the install prompt reworded and moved,
 **the role chooser** (§9), and **the copy-and-visual pass** (§10).
 
-Then **finds sharing** — the growth loop (§11).
+Then **finds sharing** — the growth loop (§11) — and the **free-pile map filter** (§12).
 
-**Not done, and next up:** §8 is the priority list. The top of it is now the free-pile map
-filter, then the seller v1.5 backlog. Stripe stays last at T.J.'s instruction.
+**Not done, and next up:** §8 is the priority list, which is now the seller v1.5 backlog —
+weather nudge and wash-out credit first, both unblocked since editing landed. Stripe stays
+last at T.J.'s instruction.
 
 ---
 
 ## 2. What is built
 
-**24 pages** · **3 API routes** · **15 migrations** · **52 commits**
+**24 pages** · **3 API routes** · **15 migrations** · **53 commits**
 
 | Area | State |
 |---|---|
 | Accounts | Email+password, verification, reset, Turnstile bot check, public `/u/username`, **role chooser** |
 | Host | Create, **edit/reschedule**, Go Live lifecycle, featured items, bulk discounts, free pile, photos, **self-serve takedown** |
-| Shopper | Map with status pins + day filter, sale pages with realtime, save, dashboard, **route planner**, wishlist alerts, finds tracker + **public share pages** |
+| Shopper | Map with status pins + day and **free-stuff** filters, sale pages with realtime, save, dashboard, **route planner**, wishlist alerts, finds tracker + **public share pages** |
 | Alerts | Queued by DB trigger, delivered by email (Resend) + web push, three kinds (match / rescheduled / moved) |
 | PWA | Manifest, icons, service worker, install + notification opt-in |
 | Admin | `/admin` overview, accounts (suspend/delete), sales (comp/hide/delete), audit trail |
@@ -217,20 +218,19 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
 2. Privacy policy exists but the contact address `hello@xlresale.com` may not be real, and
    nobody qualified has reviewed it.
 
-**Buyer gaps**
-3. Free-pile map filter ("sales with free stuff") — the badge exists, the filter doesn't.
-
 **Seller v1.5 backlog** (all specified in CLAUDE.md §6)
-4. Weather nudge and wash-out credit — both unblocked now that editing exists.
-5. Tap-to-total calculator (brief says build last).
-6. Buyer↔seller "is this still available?" ping — needs report/block first.
-7. Incoming-shopper ETAs.
-8. End-of-sale handoff and the $5 bulk-lot blast.
+3. Weather nudge and wash-out credit — both unblocked now that editing exists.
+4. Tap-to-total calculator (brief says build last).
+5. Buyer↔seller "is this still available?" ping — needs report/block first.
+6. Incoming-shopper ETAs.
+7. End-of-sale handoff and the $5 bulk-lot blast.
 
 **Unverified by a human — needs a phone, ten minutes**
 - The Turnstile submit-hold fix (sign out, sign in at normal typing speed)
 - Web push end-to-end (`VAPID_PRIVATE_KEY` is the only unconfirmed env var)
 - The new nav, category picker, and route drag/swipe
+- **The map's Free stuff toggle and the FREE pin badge** — behaviour and SVG are verified
+  (§12), but nobody has seen either on a map.
 - **How the chooser looks.** Its behaviour is verified against the running app (§9), but
   nothing has been seen on a screen this session: the browser pane wouldn't composite
   frames, so every screenshot timed out.
@@ -329,10 +329,12 @@ Camping" in the filters.
 category — eight before the category tree landed, **101** after it; it's parents only now.
 And the 404's "Back to the map" button went to the landing page.
 
-**Not covered:** the map's own preview card has no category chips. Its sales arrive from
-an RPC and can be refetched client-side after a locate, so there is no cheap place to hang
-a second query — it needs either an array column on the RPC's return type or a client
-fetch, and neither was worth it for a card you see one at a time.
+**~~Not covered:~~ the map's preview card — done later, and the reasoning here was wrong.**
+This said a second query had nowhere cheap to hang. It didn't need one:
+`sales_near_upcoming` has returned each sale's category slugs all along, so the map page
+fetches the ~100 category rows once and the client maps slug → colour. Fixed with the
+free-pile filter (§12). Worth remembering as a case of ruling something out without
+reading the function's return type.
 
 ---
 
@@ -397,7 +399,43 @@ a missing preview image, and the byte sniffing covers the case that actually hap
 
 ---
 
-## 12. How this session worked
+## 12. The free-pile filter, as built
+
+`app/map/MapView.tsx` · `app/map/page.tsx` · `lib/map-pin.ts`
+
+A **Free stuff** toggle on the map, sitting apart from the day buttons because it's a
+toggle rather than another day, and green because that's the colour of the FREE badge it
+filters for. It only renders when something in range actually has a free pile — computed
+over every loaded sale, not the day-filtered set, so it doesn't appear and vanish as you
+tap between days.
+
+**The pin got the badge too**, which the brief asked for and nothing had built: a green
+disc with a canvas-coloured ring at the tag's top-right. The ring is what keeps it legible
+on the one pin that is already green — a live sale. A dot rather than the word, because
+four letters at 40px across are mush. `tagPinDataUri` takes an options object now instead
+of a positional boolean. A filter for something invisible on the map is half a feature,
+which is why this came along with it.
+
+**Filtering still never touches the map instance.** Both filters only call
+`marker.setVisible`, per MAPS-COST-CONTROLS.md §2 — every fresh map init is a billable
+load, so a filter tap must not cause one.
+
+**Filters can now exclude everything while pins are still loaded**, and a blank map with no
+explanation reads as a broken one. That case says which filter did it ("No free piles on
+Saturday") and undoes it in a tap.
+
+**Verified:** five checks that the page ships `free_pile` and the category slugs to the
+client and renders the toggle, and eight against the real `lib/map-pin.ts` (executed via
+`tsx`, not reimplemented) covering the badge on plain, live, and selected pins.
+
+**Unverified, and it needs a phone:** how the toggle and the pin badge actually look. A
+signed-in browser can't be had locally — Turnstile can't pass on localhost (§4) — and
+screenshots don't work on this machine at all, so nothing on the map has been seen with
+eyes this session.
+
+---
+
+## 13. How this session worked
 
 T.J. is a screenwriter, not a developer, and does not use a terminal. Run every command
 yourself and give dashboard click-paths for anything that must happen in a GUI.
