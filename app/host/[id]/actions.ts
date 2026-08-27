@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  MAX_RESCHEDULES,
+  announceNewDate,
+  flushAlerts,
+  rescheduleCapMessage,
+} from "@/lib/reschedule";
 import type { SaleStatus } from "@/lib/database.types";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -205,4 +211,97 @@ export async function setSaleHidden(saleId: string, hidden: boolean): Promise<Hi
     default:
       return { ok: false, message: "That sale no longer exists." };
   }
+}
+
+/**
+ * Move the sale to a new date in one tap, from the weather nudge.
+ *
+ * The full edit form can do this too. This exists because the moment a host is
+ * most willing to move a sale is the moment they're told it's going to rain on
+ * it, and making them open a form and find the date field is enough friction to
+ * lose them.
+ *
+ * Same policy as the form: the cap is a count, the move is free, and everyone
+ * who saved the sale gets told (lib/reschedule.ts).
+ */
+export async function rescheduleTo(saleId: string, newDate: string): Promise<ActionResult> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) return { ok: false, message: "That isn't a date." };
+  if (newDate < new Date().toLocaleDateString("en-CA")) {
+    return { ok: false, message: "That date has already been." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  // host_sales is scoped to auth.uid(), so reading the row IS the ownership check.
+  const { data: sale } = await supabase
+    .from("host_sales")
+    .select("id, sale_date, reschedule_count")
+    .eq("id", saleId)
+    .maybeSingle();
+
+  if (!sale) return { ok: false, message: "That sale isn't yours, or no longer exists." };
+  if (sale.sale_date === newDate) return { ok: true };
+  if (sale.reschedule_count >= MAX_RESCHEDULES) {
+    return { ok: false, message: rescheduleCapMessage };
+  }
+
+  const { error } = await supabase
+    .from("sales")
+    .update({
+      sale_date: newDate,
+      reschedule_count: sale.reschedule_count + 1,
+      // Clearing the guard by hand rather than leaving it to the date compare:
+      // the host has now answered this question, and the next forecast should
+      // be judged on its own merits.
+      weather_nudged_for: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", saleId);
+
+  if (error) {
+    console.error("rescheduleTo failed:", error.message);
+    return { ok: false, message: "Couldn't move it just now." };
+  }
+
+  const told = await announceNewDate(supabase, saleId, newDate);
+  if (told > 0) await flushAlerts();
+
+  revalidatePath(`/host/${saleId}`);
+  revalidatePath(`/s/${saleId}`);
+  revalidatePath("/host");
+  return { ok: true };
+}
+
+/**
+ * "Keep the date." Silences the nudge for the date the sale is currently on,
+ * without moving anything.
+ *
+ * Stamping the date rather than a boolean is what makes this self-resetting: if
+ * the host later moves the sale for any other reason, `sale_date` no longer
+ * matches and a fresh forecast for the new date can speak up again.
+ */
+export async function keepTheDate(saleId: string): Promise<ActionResult> {
+  const { supabase, owned } = await ownedSale(saleId);
+  if (!owned) return { ok: false, message: "That sale isn't yours." };
+
+  const { data: sale } = await supabase
+    .from("host_sales")
+    .select("sale_date")
+    .eq("id", saleId)
+    .maybeSingle();
+  if (!sale) return { ok: false, message: "That sale no longer exists." };
+
+  const { error } = await supabase
+    .from("sales")
+    .update({ weather_nudged_for: sale.sale_date })
+    .eq("id", saleId);
+
+  if (error) return { ok: false, message: "Couldn't save that just now." };
+
+  revalidatePath(`/host/${saleId}`);
+  return { ok: true };
 }

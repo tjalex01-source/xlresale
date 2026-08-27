@@ -11,6 +11,8 @@ import { GoLiveCard } from "./GoLiveCard";
 import { FeaturedItems } from "./FeaturedItems";
 import { FreePileToggle } from "./FreePileToggle";
 import { TakedownCard } from "./TakedownCard";
+import { WeatherNudge } from "./WeatherNudge";
+import { weatherNudgeFor } from "@/lib/weather";
 
 export const metadata: Metadata = { title: "Your sale — XLResale" };
 
@@ -54,22 +56,42 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
     // host_sales is scoped to auth.uid() and always returns the real address.
     .from("host_sales")
     .select(
-      "id, host_id, title, description, address, sale_date, opens_at, closes_at, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active, hidden_at",
+      "id, host_id, title, description, address, sale_date, opens_at, closes_at, time_zone, status, listing_paid, free_pile, free_pile_note, discount_percent, discount_active, hidden_at, weather_nudged_for",
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!sale || sale.host_id !== user.id) notFound();
 
-  const [{ data: photos }, { data: items }, { count: watcherCount }] = await Promise.all([
-    supabase.from("sale_photos").select("id, storage_path").eq("sale_id", id).order("position"),
-    supabase
-      .from("sale_items")
-      .select("id, name, price, item_discount_percent, exclude_from_bulk, is_sold")
-      .eq("sale_id", id)
-      .order("position"),
-    supabase.from("sale_watchers").select("*", { count: "exact", head: true }).eq("sale_id", id),
-  ]);
+  const [{ data: photos }, { data: items }, { count: watcherCount }, { data: point }] =
+    await Promise.all([
+      supabase.from("sale_photos").select("id, storage_path").eq("sale_id", id).order("position"),
+      supabase
+        .from("sale_items")
+        .select("id, name, price, item_discount_percent, exclude_from_bulk, is_sold")
+        .eq("sale_id", id)
+        .order("position"),
+      supabase.from("sale_watchers").select("*", { count: "exact", head: true }).eq("sale_id", id),
+      // The one sanctioned way to read a host's own coordinates — SELECT on
+      // sales.location is revoked (docs/ADDRESS-POLICY.md).
+      supabase.rpc("my_sale_point", { in_sale_id: id }),
+    ]);
+
+  // Only when the host hasn't already answered for this date. `keepTheDate`
+  // stamps the date itself, so a later reschedule re-arms it for free.
+  const coords = point?.[0];
+  const nudge =
+    coords && sale.weather_nudged_for !== sale.sale_date
+      ? await weatherNudgeFor(
+          {
+            sale_date: sale.sale_date,
+            opens_at: sale.opens_at,
+            closes_at: sale.closes_at,
+            time_zone: sale.time_zone,
+          },
+          coords,
+        )
+      : null;
 
   const publicBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/sale-photos`;
   const meta = SALE_STATUS_META[sale.status];
@@ -109,6 +131,11 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
         <div className="mt-6">
           <GoLiveCard saleId={sale.id} status={sale.status} watcherCount={watcherCount ?? 0} />
         </div>
+
+        {/* Under Go Live because it is the most time-sensitive thing here, and
+            above everything else because a host who has just been told it will
+            rain has one decision to make. */}
+        {nudge && <WeatherNudge saleId={sale.id} nudge={nudge} />}
 
         <Card title="How your pin looks">
           <div className="flex items-center gap-4 rounded-[16px] border border-hair bg-canvas p-4">

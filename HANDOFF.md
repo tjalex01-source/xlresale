@@ -19,22 +19,22 @@ Done in that pass: a single navigation bar, a category tree with subcategories o
 sides, finger-drag and swipe on the route planner, the install prompt reworded and moved,
 **the role chooser** (§9), and **the copy-and-visual pass** (§10).
 
-Then **finds sharing** — the growth loop (§11) — and the **free-pile map filter** (§12).
+Then **finds sharing** — the growth loop (§11) — the **free-pile map filter** (§12), and
+the **weather nudge** (§13). Two unrelated bugs surfaced on the way; see §14.
 
-**Not done, and next up:** §8 is the priority list, which is now the seller v1.5 backlog —
-weather nudge and wash-out credit first, both unblocked since editing landed. Stripe stays
-last at T.J.'s instruction.
+**Not done, and next up:** §8 is the priority list. Next is the tap-to-total calculator,
+then the buyer↔seller ping. Stripe stays last at T.J.'s instruction.
 
 ---
 
 ## 2. What is built
 
-**24 pages** · **3 API routes** · **15 migrations** · **53 commits**
+**24 pages** · **3 API routes** · **18 migrations** · **54 commits**
 
 | Area | State |
 |---|---|
 | Accounts | Email+password, verification, reset, Turnstile bot check, public `/u/username`, **role chooser** |
-| Host | Create, **edit/reschedule**, Go Live lifecycle, featured items, bulk discounts, free pile, photos, **self-serve takedown** |
+| Host | Create, **edit/reschedule**, **weather nudge**, Go Live lifecycle, featured items, bulk discounts, free pile, photos, **self-serve takedown** |
 | Shopper | Map with status pins + day and **free-stuff** filters, sale pages with realtime, save, dashboard, **route planner**, wishlist alerts, finds tracker + **public share pages** |
 | Alerts | Queued by DB trigger, delivered by email (Resend) + web push, three kinds (match / rescheduled / moved) |
 | PWA | Manifest, icons, service worker, install + notification opt-in |
@@ -100,8 +100,29 @@ These were made deliberately. Don't "fix" them back.
 - **PostgREST expands `select=*` before checking column privileges.** After narrowing the
   grant on `sales`, every `select("*")` on that table 401'd — including two `head: true`
   counts that broke the landing page and the account page. Name your columns.
-- **Supabase default privileges grant `EXECUTE` to `anon` on every new function in
-  `public`.** `REVOKE … FROM PUBLIC` does *not* remove it. Revoke from `anon` explicitly.
+- **A new function in `public` needs BOTH revokes, and this note used to say the
+  opposite.** It read "`REVOKE … FROM PUBLIC` does not remove it; revoke from `anon`
+  explicitly", which is backwards and made every revoke written on that advice a no-op.
+  A new function collects *two* grants: Postgres's own default to `PUBLIC`, and Supabase's
+  default privileges to anon/authenticated/service_role. Revoking from `anon` leaves the
+  PUBLIC grant, and `has_function_privilege('anon', …)` still says true — in the ACL it
+  shows as a bare `=X/postgres` with no grantee. Write both:
+  ```sql
+  revoke execute on function public.f(args) from public;
+  revoke execute on function public.f(args) from anon, authenticated;
+  ```
+  Three SECURITY DEFINER functions were reachable by anon because of this; see
+  `schema-additions-function-grants.sql`.
+- **A view built on `select *` freezes its column list when it is created.** Every column
+  added to the table afterwards is invisible to the view — silently, with no error until
+  something selects it. `host_sales` was six columns behind and two live pages were 404ing
+  because of it. `schema-additions-host-sales-fix.sql` re-expands it and ends with a check
+  that fails loudly if it drifts again. **Add a column to `public.sales`? Re-run that file.**
+- **`SELECT` revoked from `authenticated` also stops a SECURITY INVOKER function.** A
+  function reading `sales.location` as the caller gets "permission denied for table sales".
+  Read through `host_sales` instead: a view is checked against its *owner's* privileges, and
+  that view is already scoped to `auth.uid()`, so it supplies the reach and the access
+  control together — no SECURITY DEFINER, no hand-written ownership check to get wrong.
 - **`NOT NULL` + `ON DELETE SET NULL` is a contradiction** that only fires on delete. It
   made admins undeletable. Fixed on `admin_actions.actor_id`.
 - **Turnstile is checked before the password.** A missing captcha token produces
@@ -219,16 +240,16 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
    nobody qualified has reviewed it.
 
 **Seller v1.5 backlog** (all specified in CLAUDE.md §6)
-3. Weather nudge and wash-out credit — both unblocked now that editing exists.
-4. Tap-to-total calculator (brief says build last).
-5. Buyer↔seller "is this still available?" ping — needs report/block first.
-6. Incoming-shopper ETAs.
-7. End-of-sale handoff and the $5 bulk-lot blast.
+3. Tap-to-total calculator (brief says build last).
+4. Buyer↔seller "is this still available?" ping — needs report/block first.
+5. Incoming-shopper ETAs.
+6. End-of-sale handoff and the $5 bulk-lot blast.
 
 **Unverified by a human — needs a phone, ten minutes**
 - The Turnstile submit-hold fix (sign out, sign in at normal typing speed)
 - Web push end-to-end (`VAPID_PRIVATE_KEY` is the only unconfirmed env var)
 - The new nav, category picker, and route drag/swipe
+- **The weather nudge's one-tap buttons** — rendered and read, never clicked (§13).
 - **The map's Free stuff toggle and the FREE pin badge** — behaviour and SVG are verified
   (§12), but nobody has seen either on a map.
 - **How the chooser looks.** Its behaviour is verified against the running app (§9), but
@@ -435,7 +456,89 @@ eyes this session.
 
 ---
 
-## 13. How this session worked
+## 13. The weather nudge, as built
+
+`schema-additions-weather.sql` · `lib/weather.ts` · `lib/weather-nudge.ts` ·
+`app/host/[id]/WeatherNudge.tsx` · `lib/reschedule.ts`
+
+Rain forecast for your sale? A card on the sale dashboard says so, shows its evidence, and
+offers up to three drier dates as one-tap buttons. A daily cron emails hosts the same
+thing, because the card only reaches a host who opens the dashboard and most won't between
+listing a sale and standing in the driveway — "proactively" is the word the brief uses and
+it's the half that makes this worth building.
+
+**Open-Meteo**, chosen because it needs no API key and no billing account. Every other key
+in this project is one more thing for T.J. to add in a dashboard and one more thing to
+expire silently.
+
+**Read hourly, clipped to the sale's own opening hours.** A daily figure would move a sale
+because of rain at nine in the evening, three hours after the driveway was packed up. A
+nudge that's wrong even occasionally is worse than none, because the host stops believing
+it — which is also why it takes *both* a high probability (≥60%) and real accumulation
+(≥1mm), and why it always shows the numbers so a host who knows their own sky can overrule
+it.
+
+**Weekends are offered before drier weekdays.** London came out 98% on the Saturday with a
+22% Sunday and a 12% Tuesday, and it offered the Sunday first. A garage sale on a Tuesday
+is worse advice than one a few days further out.
+
+**`weather_nudged_for` is a date, not a flag.** It stores the date warned about and is
+compared against `sale_date`, so the guard resets itself the moment the host reschedules —
+a new date gets judged on its own forecast with no extra bookkeeping. "Keep the date"
+stamps it; the one-tap move clears it.
+
+**The wash-out credit needed no code, and that is the honest answer.** CLAUDE.md §6 asks
+for "a rain-check credit (a free relist) rather than a cash refund". The $5 already buys a
+sale that never expires and can move to any future date up to ten times — so the credit
+exists, with nothing to redeem. What was missing was *saying so* at the moment it matters,
+which the card now does: "Moving it is free — the $5 buys the sale, not the date."
+
+**Verified** with 14 checks against the running app, driving real forecasts: the card
+appears for a washout and not for a dry day, shows its evidence, offers weekend-first
+alternatives, degrades to "nothing drier this week" where there is none (Singapore in the
+wet season), stays quiet once answered, re-arms on a new date, and the cron picks the sale
+up, notices the rain, stamps the date and won't nudge it twice.
+
+**Unverified:** the one-tap buttons have been rendered and read, but never clicked — that
+needs a signed-in browser, which Turnstile blocks locally (§4). The action shares
+`announceNewDate` with the edit form, which is exercised.
+
+---
+
+## 14. Two bugs found while doing it
+
+Both came out of checking the grants on the new functions and finding §4's note was
+backwards. Neither is related to the weather.
+
+**The host sale dashboard was a 404 for its own owner, and editing a sale always failed.**
+`host_sales` is `select s.*`, which Postgres expands once and freezes. Six columns had been
+added to `sales` since the view was created, including `hidden_at` — which
+`app/host/[id]/page.tsx` selects, so the query errored and the page fell through to
+`notFound()`. `app/host/[id]/edit/actions.ts` selects `reschedule_count`, also missing, so
+every edit returned "That sale isn't yours, or no longer exists."
+
+This has been broken since the takedown feature shipped. It survived because the sessions
+that built those features verified against the database rather than the page, and the one
+person with a sale hadn't opened either screen since. **Worth taking as the lesson of this
+session: a check that never renders the page cannot see a broken page.**
+
+**Three SECURITY DEFINER functions were callable with the anon key**, which ships in the
+JavaScript bundle. The serious one was `sale_move_miles` — it took any sale id and any
+point and returned the exact distance between them, with no ownership check. Sale ids are
+public (one is in the URL of every `/s/[id]` page), so three calls trilaterate a host's
+front door. That is exactly what `docs/ADDRESS-POLICY.md` exists to prevent, and that
+document calls host address exposure "the one XLResale exposure that is about physical
+safety, not just privacy". Its own verification probed the view, the base table, the RPCs
+and a `like` filter used as an extraction oracle, and missed this function.
+
+Also closed: `consume_listing_credit` (anon could zero any host's credits — harmless only
+because nothing spends them yet) and `match_sale_to_wishlists` (anon could enqueue mail to
+strangers). Both are now service_role only. `sale_move_miles` got the grant closed *and* a
+`host_id = auth.uid()` clause, since either alone is thin.
+
+---
+
+## 15. How this session worked
 
 T.J. is a screenwriter, not a developer, and does not use a terminal. Run every command
 yourself and give dashboard click-paths for anything that must happen in a GUI.

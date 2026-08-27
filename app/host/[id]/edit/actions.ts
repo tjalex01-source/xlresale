@@ -3,15 +3,18 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { formatSaleDay } from "@/lib/sale-time";
+import {
+  MAX_RESCHEDULES,
+  announceNewDate,
+  flushAlerts,
+  peopleTold,
+  rescheduleCapMessage,
+} from "@/lib/reschedule";
 
 export type EditState =
   | { status: "idle" }
   | { status: "error"; message: string; field?: string }
   | { status: "saved"; message: string };
-
-/** Generous, per CLAUDE.md §6 — a host rained out three weekends running is normal. */
-const MAX_RESCHEDULES = 10;
 
 /** Past this, it's somewhere else rather than a better geocode of the same driveway. */
 const SIGNIFICANT_MOVE_MILES = 0.25;
@@ -84,11 +87,7 @@ export async function updateSale(_prev: EditState | null, formData: FormData): P
   const dateChanged = current.sale_date !== saleDate;
 
   if (dateChanged && current.reschedule_count >= MAX_RESCHEDULES) {
-    return {
-      status: "error",
-      message: `You've moved this sale ${MAX_RESCHEDULES} times. Get in touch and we'll sort it out.`,
-      field: "sale_date",
-    };
+    return { status: "error", message: rescheduleCapMessage, field: "sale_date" };
   }
 
   // Measured before the update, while the old point is still in the row.
@@ -144,14 +143,8 @@ export async function updateSale(_prev: EditState | null, formData: FormData): P
   const notices: string[] = [];
 
   if (dateChanged) {
-    const { data: count } = await supabase.rpc("notify_sale_watchers", {
-      in_sale_id: saleId,
-      in_kind: "rescheduled",
-      in_note: `now ${formatSaleDay(saleDate)}`,
-    });
-    if (typeof count === "number" && count > 0) {
-      notices.push(`${count} ${count === 1 ? "person" : "people"} told about the new date`);
-    }
+    const told = await announceNewDate(supabase, saleId, saleDate);
+    if (told > 0) notices.push(peopleTold(told));
   }
 
   if (movedMiles > SIGNIFICANT_MOVE_MILES) {
@@ -165,12 +158,7 @@ export async function updateSale(_prev: EditState | null, formData: FormData): P
     }
   }
 
-  // Send immediately rather than waiting for the nightly sweep — a date change
-  // is only useful to someone who hears about it before they set off.
-  if (notices.length) {
-    const { sendPendingAlerts } = await import("@/lib/notify");
-    await sendPendingAlerts();
-  }
+  if (notices.length) await flushAlerts();
 
   revalidatePath(`/host/${saleId}`);
   revalidatePath(`/s/${saleId}`);

@@ -120,6 +120,9 @@ schema-additions-account.sql
 schema-additions-categories.sql
 schema-additions-focus.sql
 schema-additions-finds-sharing.sql
+schema-additions-weather.sql
+schema-additions-function-grants.sql
+schema-additions-host-sales-fix.sql
 ```
 
 Also in the repo: `docs/ADDRESS-POLICY.md` — the host-address precision decision, which

@@ -479,6 +479,7 @@ export type Database = {
           time_zone: string
           title: string
           updated_at: string
+          weather_nudged_for: string | null
           went_live_at: string | null
         }
         Insert: {
@@ -508,6 +509,7 @@ export type Database = {
           time_zone?: string
           title: string
           updated_at?: string
+          weather_nudged_for?: string | null
           went_live_at?: string | null
         }
         Update: {
@@ -537,6 +539,7 @@ export type Database = {
           time_zone?: string
           title?: string
           updated_at?: string
+          weather_nudged_for?: string | null
           went_live_at?: string | null
         }
         Relationships: [
@@ -889,6 +892,10 @@ export type Database = {
           is_empty: boolean
         }[]
       }
+      my_sale_point: {
+        Args: { in_sale_id: string }
+        Returns: { lat: number; lng: number }[]
+      }
       my_saved_sales: {
         Args: Record<string, never>
         Returns: Database["public"]["Functions"]["sales_near_upcoming"]["Returns"]
@@ -919,6 +926,21 @@ export type Database = {
       sales_near_me: {
         Args: { in_miles?: number; in_days?: number }
         Returns: Database["public"]["Functions"]["sales_near_upcoming"]["Returns"]
+      }
+      upcoming_sales_for_weather: {
+        Args: { in_days?: number }
+        Returns: {
+          id: string
+          host_id: string
+          title: string
+          sale_date: string
+          opens_at: string
+          closes_at: string
+          time_zone: string
+          lat: number
+          lng: number
+          weather_nudged_for: string | null
+        }[]
       }
       sales_near_upcoming: {
         Args: {
