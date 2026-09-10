@@ -169,7 +169,12 @@ given, the keyword *narrows* the categories.
 ## 6. Operational facts
 
 **Environment.** `.env.local` has everything except `RESEND_API_KEY` (Vercel only). Vercel
-has all of it. `GOOGLE_MAPS_SERVER_KEY` is present locally but empty — drive times only
+has all of it — checked 2026-09-10: `RESEND_API_KEY` and `CRON_SECRET` are both there, so the
+weather-nudge and alert emails will send. (A stale duplicate named `XLResale_API_Key` is also
+there and reads by nothing; harmless, but it can go.) `NEXT_PUBLIC_SITE_URL` is now pinned to
+`https://www.xlresale.com` **for production only** — the apex redirects to www, and share
+links and Open Graph image URLs should not start on a redirect. Previews deliberately keep
+using their own URL (`lib/finds.ts` → `siteUrl`). `GOOGLE_MAPS_SERVER_KEY` is present locally but empty — drive times only
 work in production.
 
 **Database access.** No Supabase MCP auth in this setup. SQL was run with a throwaway
