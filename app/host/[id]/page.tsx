@@ -11,6 +11,7 @@ import { GoLiveCard } from "./GoLiveCard";
 import { FeaturedItems } from "./FeaturedItems";
 import { FreePileToggle } from "./FreePileToggle";
 import { TakedownCard } from "./TakedownCard";
+import { TallyDrawer } from "./TallyDrawer";
 import { WeatherNudge } from "./WeatherNudge";
 import { weatherNudgeFor } from "@/lib/weather";
 
@@ -192,6 +193,17 @@ export default async function SaleDashboard({ params }: PageProps<"/host/[id]">)
             publicBase={publicBase}
           />
         </Card>
+
+        {/* Only on a sale that's actually happening — a draft has no buyers, and
+            a floating button on a page nobody can reach is just clutter. */}
+        {sale.listing_paid && (
+          <TallyDrawer
+            saleId={sale.id}
+            items={items ?? []}
+            discountPercent={sale.discount_percent}
+            discountActive={sale.discount_active}
+          />
+        )}
 
         {!sale.listing_paid && (
           <Card title="Publish" hint="$5 puts this on the map.">

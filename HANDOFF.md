@@ -20,21 +20,24 @@ sides, finger-drag and swipe on the route planner, the install prompt reworded a
 **the role chooser** (§9), and **the copy-and-visual pass** (§10).
 
 Then **finds sharing** — the growth loop (§11) — the **free-pile map filter** (§12), and
-the **weather nudge** (§13). Two unrelated bugs surfaced on the way; see §14.
+the **weather nudge** (§13). Two unrelated bugs surfaced on the way; see §14. Then the
+**tally calculator** (§15), which is the last seller feature in the brief.
 
-**Not done, and next up:** §8 is the priority list. Next is the tap-to-total calculator,
-then the buyer↔seller ping. Stripe stays last at T.J.'s instruction.
+**Not done, and next up:** §8 is the priority list — the buyer↔seller ping, which needs
+report/block first. **But §16 first if you can:** one dashboard change unblocks browser
+verification for four features that have been shipped unclicked. Stripe stays last at
+T.J.'s instruction.
 
 ---
 
 ## 2. What is built
 
-**24 pages** · **3 API routes** · **18 migrations** · **54 commits**
+**24 pages** · **3 API routes** · **18 migrations** · **55 commits**
 
 | Area | State |
 |---|---|
 | Accounts | Email+password, verification, reset, Turnstile bot check, public `/u/username`, **role chooser** |
-| Host | Create, **edit/reschedule**, **weather nudge**, Go Live lifecycle, featured items, bulk discounts, free pile, photos, **self-serve takedown** |
+| Host | Create, **edit/reschedule**, **weather nudge**, **buyer tally**, Go Live lifecycle, featured items, bulk discounts, free pile, photos, **self-serve takedown** |
 | Shopper | Map with status pins + day and **free-stuff** filters, sale pages with realtime, save, dashboard, **route planner**, wishlist alerts, finds tracker + **public share pages** |
 | Alerts | Queued by DB trigger, delivered by email (Resend) + web push, three kinds (match / rescheduled / moved) |
 | PWA | Manifest, icons, service worker, install + notification opt-in |
@@ -240,21 +243,24 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
    nobody qualified has reviewed it.
 
 **Seller v1.5 backlog** (all specified in CLAUDE.md §6)
-3. Tap-to-total calculator (brief says build last).
-4. Buyer↔seller "is this still available?" ping — needs report/block first.
-5. Incoming-shopper ETAs.
-6. End-of-sale handoff and the $5 bulk-lot blast.
+3. Buyer↔seller "is this still available?" ping — needs report/block first.
+4. Incoming-shopper ETAs.
+5. End-of-sale handoff and the $5 bulk-lot blast.
 
 **Unverified by a human — needs a phone, ten minutes**
 - The Turnstile submit-hold fix (sign out, sign in at normal typing speed)
 - Web push end-to-end (`VAPID_PRIVATE_KEY` is the only unconfirmed env var)
 - The new nav, category picker, and route drag/swipe
+- **The whole tally drawer** — opening it, tapping, totals, mark-sold (§15).
 - **The weather nudge's one-tap buttons** — rendered and read, never clicked (§13).
 - **The map's Free stuff toggle and the FREE pin badge** — behaviour and SVG are verified
   (§12), but nobody has seen either on a map.
 - **How the chooser looks.** Its behaviour is verified against the running app (§9), but
   nothing has been seen on a screen this session: the browser pane wouldn't composite
   frames, so every screenshot timed out.
+
+Most of that list is one dashboard change away from being testable here rather than on a
+phone &mdash; **see §16**, and do it before building anything else.
 
 **Housekeeping**
 - Delete the six `[TEST]` sales.
@@ -538,7 +544,74 @@ strangers). Both are now service_role only. `sale_move_miles` got the grant clos
 
 ---
 
-## 15. How this session worked
+## 15. The tally calculator, as built
+
+`app/host/[id]/TallyDrawer.tsx` · `markItemsSold` in `app/host/[id]/actions.ts`
+
+The last seller feature the brief asks for, and it says to build it last
+("delight"). A **Tally a buyer** button floats over the sale dashboard; it opens a drawer
+listing every unsold featured item at its current price, taps toggle them, a running total
+sits at the bottom, and one more tap marks the lot sold — which drops those items off the
+map and out of every shopper's "still available" list.
+
+**It is a per-buyer scratchpad and nothing else.** CLAUDE.md §15 rules out cash and
+day-total tracking in as many words — that's an accounting product with a tax headache
+attached. Nothing is persisted except the items being marked sold; close the drawer and
+the tally is gone, and the drawer says so.
+
+**Loose entries are charged exactly as typed**, and this was a real decision. Most of what
+leaves a driveway was never listed, so §6 asks for "featured items (+ loose entries)". The
+question is whether a sale-wide discount should apply to a number the host just typed. It
+doesn't: pricing something on the spot at a 50%-off sale, you already say the discounted
+number, and silently halving it again costs the host money *invisibly*. Getting it wrong
+the other way is visible on screen and fixable in a second. The field is labelled
+"Charging" rather than "Price" for the same reason.
+
+**The maths is not reimplemented.** The drawer calls `lib/pricing.ts`, which mirrors the
+database's `item_effective_price()` — so a locked item ignores a sale-wide drop, and where
+both an item cut and a sale-wide cut apply, the lower price wins.
+
+**Verified** with 13 checks: the three pricing rules against the database's own function,
+`lib/pricing.ts` executed (not copied) and compared to it exactly, the item data reaching
+the page, and the `.eq(sale_id).in(id)` pair the action relies on — which marks the listed
+items and ignores an id belonging to another sale.
+
+**Unverified, and it needs a browser:** opening the drawer, tapping items, the running
+total, and the mark-sold round trip. The drawer's form only exists once it's open, so there
+is nothing to post at from outside. See §16.
+
+---
+
+## 16. The verification wall, and it's worth fixing once
+
+Three sessions running have ended with "this needs a signed-in browser and we can't have
+one". The cause is a pair:
+
+- **Turnstile can't pass on localhost** — the site key is domain-restricted. Removing the
+  key locally doesn't help either: `components/Turnstile.tsx` degrades gracefully, but
+  Supabase's own CAPTCHA protection is switched on at its end and rejects a tokenless
+  sign-in.
+- **Screenshots don't work on this machine** — the browser pane doesn't composite frames,
+  so every capture times out.
+
+Everything signed-in has therefore been verified server-side, by minting a session and
+fetching pages (§6). That catches a great deal — it caught the `host_sales` bug — but it
+cannot click anything, and the list of "rendered but never clicked" is now long enough to
+be worth clearing in one pass:
+
+- the role chooser's three buttons
+- the map's Free stuff toggle and the FREE pin badge
+- the weather nudge's one-tap reschedule buttons
+- the whole tally drawer
+
+**Two ways out, either of which unblocks all of it.** Add localhost to the Turnstile site
+key's allowed hostnames in the Cloudflare dashboard (Turnstile permits it, and the
+production key stays domain-restricted for everything else) — or add a Supabase CAPTCHA
+exemption. The first is a two-minute change in a dashboard and is the one to try.
+
+---
+
+## 17. How this session worked
 
 T.J. is a screenwriter, not a developer, and does not use a terminal. Run every command
 yourself and give dashboard click-paths for anything that must happen in a GUI.

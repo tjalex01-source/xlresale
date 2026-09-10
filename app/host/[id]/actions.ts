@@ -121,6 +121,55 @@ export async function addItem(saleId: string, formData: FormData): Promise<Actio
   return { ok: true };
 }
 
+/**
+ * Mark a whole armful sold in one go — the end of a buyer tally.
+ *
+ * Takes FormData rather than a plain argument list, like every other action in
+ * this app — one shape to remember, and the ids arrive as strings to be
+ * validated rather than as a typed array that looks trustworthy and isn't.
+ *
+ * It does NOT gain a working no-JavaScript path from that, and it was wrong to
+ * think so: the form only exists once the drawer is open, and opening it is a
+ * click handler. Selecting items and seeing a running total is inherently
+ * client-side, so there is no meaningful fallback to build here.
+ *
+ * One statement rather than a loop over updateItem: somebody is standing at the
+ * table waiting, and six round trips on a phone signal in a driveway is the
+ * difference between instant and awkward. `stamp_item_sold` in schema.sql sets
+ * sold_at on the way through, so this doesn't need to.
+ */
+export async function markItemsSold(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const saleId = String(formData.get("sale_id") ?? "");
+  const itemIds = formData.getAll("item_id").map(String);
+
+  if (itemIds.length === 0) return { ok: true };
+  if (itemIds.length > 50) return { ok: false, message: "That's a lot of items at once." };
+  if (!itemIds.every((id) => /^[0-9a-f-]{36}$/.test(id))) {
+    return { ok: false, message: "Something's wrong with that list." };
+  }
+
+  const { supabase, owned } = await ownedSale(saleId);
+  if (!owned) return { ok: false, message: "That isn't your sale." };
+
+  // `.eq("sale_id", saleId)` as well as the id list: the ids arrive from the
+  // browser, and this is what stops a crafted list marking somebody else's
+  // items sold. RLS would catch it too — this makes it not depend on that.
+  const { error } = await supabase
+    .from("sale_items")
+    .update({ is_sold: true })
+    .eq("sale_id", saleId)
+    .in("id", itemIds);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath(`/host/${saleId}`);
+  revalidatePath(`/s/${saleId}`);
+  return { ok: true };
+}
+
 export async function updateItem(
   saleId: string,
   itemId: string,
