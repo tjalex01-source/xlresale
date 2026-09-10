@@ -23,22 +23,26 @@ import { keepTheDate, rescheduleTo } from "./actions";
 export function WeatherNudge({ saleId, nudge }: { saleId: string; nudge: Nudge }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
 
-  if (done) {
-    return (
-      <div className="mt-4 rounded-[22px] bg-green-50 p-5">
-        <p className="font-display text-lg font-bold text-green-ink">{done}</p>
-      </div>
-    );
-  }
-
-  const act = (run: () => Promise<{ ok: boolean; message?: string }>, success: string) =>
+  /**
+   * There is deliberately no success state here.
+   *
+   * There used to be — a green "Moved to Sunday" panel — and clicking the
+   * button in a real browser showed it was unreachable. Both actions
+   * revalidate this page, the server re-renders, and the new date is dry by
+   * definition (dry days are the only ones offered), so `nudge` comes back null
+   * and the parent stops rendering this component before any message could be
+   * read. "Keep the date" unmounts it the same way.
+   *
+   * What the host actually sees is the card vanishing and the date at the top
+   * of the page changing, which is honest feedback. Only failures need to be
+   * held on screen, because a failure leaves the card mounted.
+   */
+  const act = (run: () => Promise<{ ok: boolean; message?: string }>) =>
     start(async () => {
       setError(null);
       const result = await run();
-      if (result.ok) setDone(success);
-      else setError(result.message ?? "That didn't work.");
+      if (!result.ok) setError(result.message ?? "That didn't work.");
     });
 
   return (
@@ -69,10 +73,7 @@ export function WeatherNudge({ saleId, nudge }: { saleId: string; nudge: Nudge }
                     type="button"
                     disabled={pending}
                     onClick={() =>
-                      act(
-                        () => rescheduleTo(saleId, day.date),
-                        `Moved to ${formatSaleDay(day.date)}. Everyone who saved it has been told.`,
-                      )
+                      act(() => rescheduleTo(saleId, day.date))
                     }
                     className="inline-flex min-h-11 flex-col items-start justify-center rounded-[10px] bg-ink px-4 py-1.5 text-left text-canvas hover:opacity-90 disabled:opacity-60"
                   >
@@ -98,7 +99,7 @@ export function WeatherNudge({ saleId, nudge }: { saleId: string; nudge: Nudge }
             <button
               type="button"
               disabled={pending}
-              onClick={() => act(() => keepTheDate(saleId), "Keeping the date.")}
+              onClick={() => act(() => keepTheDate(saleId))}
               className="text-sm font-semibold text-tangerine-ink underline underline-offset-4 hover:text-ink disabled:opacity-60"
             >
               Keep the date

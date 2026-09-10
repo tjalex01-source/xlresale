@@ -24,15 +24,14 @@ the **weather nudge** (§13). Two unrelated bugs surfaced on the way; see §14. 
 **tally calculator** (§15), which is the last seller feature in the brief.
 
 **Not done, and next up:** §8 is the priority list — the buyer↔seller ping, which needs
-report/block first. **But §16 first if you can:** one dashboard change unblocks browser
-verification for four features that have been shipped unclicked. Stripe stays last at
-T.J.'s instruction.
+report/block first. Stripe stays last at T.J.'s instruction. Everything shipped so far has
+now been clicked through in a real browser (§16).
 
 ---
 
 ## 2. What is built
 
-**24 pages** · **3 API routes** · **18 migrations** · **55 commits**
+**24 pages** · **3 API routes** · **18 migrations** · **57 commits**
 
 | Area | State |
 |---|---|
@@ -137,9 +136,12 @@ These were made deliberately. Don't "fix" them back.
   sign-in action was using it. `/\evil.com` passes it, and the browser resolves that to
   `https://evil.com/`. `lib/safe-redirect.ts` exists for this and now has both callers.
   Anything that hands a caller-supplied path to `redirect()` must go through it.
-- **Turnstile cannot pass on localhost** — the site key is domain-restricted, so the token
-  never arrives and the submit-hold never releases. A browser sign-in against the dev
-  server is therefore impossible; verify signed-in behaviour server-side (§6).
+- **Turnstile cannot pass in the in-app Browser pane, and it is nothing to do with the
+  site key.** That pane renders no iframes at all — not even a same-origin one — and
+  Turnstile is an iframe widget, so no token is ever issued and the submit-hold waits out
+  its 12 seconds. It works normally in the real browser via `claude-in-chrome`. This note
+  previously blamed a domain-restricted key and sent T.J. to the Cloudflare dashboard for
+  nothing; `localhost` was already allow-listed. See §16.
 
 ---
 
@@ -256,16 +258,10 @@ From T.J.'s walkthrough, with the reasoning that survived discussion:
 - The Turnstile submit-hold fix (sign out, sign in at normal typing speed)
 - Web push end-to-end (`VAPID_PRIVATE_KEY` is the only unconfirmed env var)
 - The new nav, category picker, and route drag/swipe
-- **The whole tally drawer** — opening it, tapping, totals, mark-sold (§15).
-- **The weather nudge's one-tap buttons** — rendered and read, never clicked (§13).
-- **The map's Free stuff toggle and the FREE pin badge** — behaviour and SVG are verified
-  (§12), but nobody has seen either on a map.
-- **How the chooser looks.** Its behaviour is verified against the running app (§9), but
-  nothing has been seen on a screen this session: the browser pane wouldn't composite
-  frames, so every screenshot timed out.
 
-Most of that list is one dashboard change away from being testable here rather than on a
-phone &mdash; **see §16**, and do it before building anything else.
+The tally drawer, the weather nudge's buttons, the map's Free stuff toggle and pin badge,
+and the role chooser have all now been **clicked through in a real browser** &mdash; see
+§16 for how, and use it rather than adding to this list.
 
 **Housekeeping**
 - Delete the six `[TEST]` sales.
@@ -581,38 +577,46 @@ both an item cut and a sale-wide cut apply, the lower price wins.
 the page, and the `.eq(sale_id).in(id)` pair the action relies on — which marks the listed
 items and ignores an id belonging to another sale.
 
-**Unverified, and it needs a browser:** opening the drawer, tapping items, the running
-total, and the mark-sold round trip. The drawer's form only exists once it's open, so there
-is nothing to post at from outside. See §16.
+**Then clicked through in a real browser** (§16): the drawer opens, all three prices match
+the database exactly, the locked item stays at full price, the already-sold item is absent,
+the totals read $245 sticker − $31.25 = $213.75, a loose entry adds at face value without
+taking the discount, and "Mark 3 sold & clear" marks exactly those three with `sold_at`
+stamped by the trigger.
 
 ---
 
-## 16. The verification wall, and it's worth fixing once
+## 16. How to verify signed-in pages — use the real Chrome
 
-Three sessions running have ended with "this needs a signed-in browser and we can't have
-one". The cause is a pair:
+**The first version of this section was wrong, twice.** It blamed a domain-restricted
+Turnstile key, then suggested a Supabase CAPTCHA exemption. Neither was the cause, and
+`localhost` had been in the Turnstile hostname list all along.
 
-- **Turnstile can't pass on localhost** — the site key is domain-restricted. Removing the
-  key locally doesn't help either: `components/Turnstile.tsx` degrades gracefully, but
-  Supabase's own CAPTCHA protection is switched on at its end and rejects a tokenless
-  sign-in.
-- **Screenshots don't work on this machine** — the browser pane doesn't composite frames,
-  so every capture times out.
+**The real cause: the in-app Browser pane renders no iframes at all.** Not cross-origin
+ones, and not even a same-origin `/login` in an `<iframe>` — every one times out, with no
+CSP on the page and no sandbox. Turnstile *is* an iframe widget, so it could never issue a
+token there. The Cloudflare script loads fine and `turnstile.render()` even returns a
+widget id; it simply never produces a frame, a token, or an error callback. That is what
+the held submit ("One second — finishing the bot check") was waiting on for three sessions.
 
-Everything signed-in has therefore been verified server-side, by minting a session and
-fetching pages (§6). That catches a great deal — it caught the `host_sales` bug — but it
-cannot click anything, and the list of "rendered but never clicked" is now long enough to
-be worth clearing in one pass:
+**Use `claude-in-chrome` instead.** In the real browser Turnstile issues a token in a
+couple of seconds and sign-in works normally. The whole signed-in app is reachable:
 
-- the role chooser's three buttons
-- the map's Free stuff toggle and the FREE pin badge
-- the weather nudge's one-tap reschedule buttons
-- the whole tally drawer
+1. `node testuser.js create` in the scratchpad — an already-confirmed throwaway account
+   via the admin API, email and password printed.
+2. `mcp__claude-in-chrome__navigate` to `http://localhost:3011/login`, fill, submit.
+3. For host-side features, temporarily reassign a `[TEST]` sale's `host_id` to that
+   account — snapshot the row first, and put it back afterwards.
+4. `node testuser.js delete` when finished.
 
-**Two ways out, either of which unblocks all of it.** Add localhost to the Turnstile site
-key's allowed hostnames in the Cloudflare dashboard (Turnstile permits it, and the
-production key stays domain-restricted for everything else) — or add a Supabase CAPTCHA
-exemption. The first is a two-minute change in a dashboard and is the one to try.
+Screenshots work there too, which they never do in the Browser pane.
+
+**Everything on the old “never clicked” list has now been clicked** — the role chooser,
+the map's Free stuff toggle and FREE pin badge, the weather nudge's reschedule buttons,
+and the whole tally drawer. Clicking them found a real defect (§13) that no amount of
+server-side checking would ever have surfaced.
+
+Server-side verification (§6) is still the right tool for data and policy — it is what
+caught the `host_sales` bug. It just cannot click, and now it does not have to.
 
 ---
 
